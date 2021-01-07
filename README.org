@@ -1,0 +1,95 @@
+#+TITLE: rspb: Really Simple PasteBin
+
+* Deploy
+On itself, rspb does not require any external programs to run. However, for performance sake, you may want to utilize a Redis instance for caching small pastes in memory.
+
+rspb requires a config file. Here's an example:
+#+BEGIN_SRC conf-toml
+base_dir = "/home/sya/Temp/paste"
+redis_address = "unix:///run/redis/redis.sock" # Drop this line if you don't want Redis as cache
+bind_address = "127.0.0.1:8080"
+
+[site] # Used to render web pages
+name = "Random Pastebin"
+description = "Paste stuff here, no guarantee."
+url = "localhost:8080"
+#+END_SRC
+
+** Redis configuration
+We need to configure Redis to evict keys so that it won't oom the server.
+
+#+BEGIN_SRC conf
+maxmemory 100mb # Set according to your server
+maxmemory-policy allkeys-lru
+#+END_SRC
+
+* API
+** Paste CURD
+*** Create paste
+POST /
+
+Use ~form-data/multipart~ to upload the content.
+
+Headers:
++ *Expire-After* Optional, used to set time of expire.
+  - Value follows this format: <int>{m, h, d, w}
+  - For example, =1h= means the paste will expire after an hour, and =10d= means the paste will expire after 10 days.
++ *Syntax-Highlight* Optional, specify the language you want the paste to be highlighted.
+  - Value should be the file extension of the corresponding code file.
+
+**** Response
+A typical success request would look like this:
+#+BEGIN_SRC json
+{
+  "success": true,
+  "message": null,
+  "info": {
+    "id": "fcmg0q",
+    "key": "NbzeQTHTNq",
+    "expire_time": "2021-01-04T04:34:50.343851892Z"
+  }
+}
+#+END_SRC
+
+If syntax highlighting failed, ~success~ field will still report ~true~ but message will contain a message =Syntax highlighting failed.=.
+
+** Modify paste
+PUT /{id}   
+
+Use ~form-data/multipart~ to upload the content to replace the current one.
+
+Headers:
++ *Key* Necessary. The key you obtain from creating the paste. All operations will require a valid key.
++ *Update-Content* Optional. Set to =y= if you want to use ~multipart~ to upload your new data.
+  - If not set, the upload would be ignored.
++ *Expire-Time* Optional. Set it if you want to renew the paste to be expired after given time from now.
+  - Follows the same time format as in create paste headers.
++ *Syntax-Highlight* Optional. Set it to the corresponding language's file extension if you want to re-highlight the paste.
+
+**** Response
+A typical success response:
+#+BEGIN_SRC json
+{
+  "success": true,
+  "message": null
+}
+#+END_SRC
+
+If syntax highlighting failed, ~success~ field will still report ~true~ but message will contain a message =Syntax highlighting failed.=.
+
+** Delete paste
+DELETE /{id}
+
+Delete the paste NOW.
+
+Headers:
++ *Key* Necessary, the key obtained when creating the paste.
+
+**** Response
+A typical success response:
+#+BEGIN_SRC json
+{
+  "success": true,
+  "message": null
+}
+#+END_SRC

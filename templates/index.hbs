@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title }}</title>
+  </head>
+  <body>
+    <main>
+      <div id="title-bar">
+        <h1>{{ title }}</h1>
+        <h2>{{ slogan }}</h2>
+      </div>
+      <p>{{ description }}</p>
+
+      <h2>Abstract</h2>
+      <p>To create new paste from local file:
+        <div class="code-block">
+          <pre>curl -F "c=@FileName.ext" '{{ url }}'</pre>
+        </div>
+      </p>
+
+      <p>To create new paste from command:
+        <div class="code-block">
+          <pre>cmd | curl -F "c=@-" '{{ url }}'</pre>
+        </div>
+      </p>
+
+      <p>To delete paste:
+        <div class="code-block">
+          <pre>curl -i -X DELETE -H "Key: $PASTE_KEY" '{{ url }}/$PASTE_ID'</pre>
+        </div>
+      </p>
+
+      <h2>More examples with cURL</h2>
+      <h3>Create paste with syntax highlighting</h3>
+      <div class="code-block">
+        <pre>curl -F "c=@code.rs" -H "Syntax-Highlight: rs" "{{ url }}"</pre>
+      </div>
+      <p>Then you can see the highlighted code at <code>https://{{ url }}/$PASTE_ID?syntax=on</code>.</p>
+
+      <h3>Create paste with expire time</h3>
+      <div class="code-block">
+        <pre>curl -F "c=@code.rs" -H "Syntax-Highlight: rs" -H "Expire-After: 1d" "{{ url }}"</pre>
+      </div>
+      <p>
+        Here, <code>1d</code> means the paste will expire after one day. You can also use suffixes m(inutes) and h(ours).
+      </p>
+
+      <h3>Update paste</h3>
+       <div class="code-block">
+         <pre>curl -i -X PUT "{{ url }}/$PASTE_ID" -H "Key: $PASTE_KEY" -H "Update-Content: y" -F "c=@new_code.rs"</pre>
+      </div>
+      <p> This operation will replace the original content of the paste.</p>
+
+      <h3>Re-highlight syntax of paste</h3>
+      <div class="code-block">
+        <pre>curl -i -X PUT "{{ url }}/$PASTE_ID" -H "Key: $PASTE_KEY" -H "Syntax-Highlight: tex"</pre>
+      </div>
+      <p>This would regenerate syntax highlight for the paste with the given code file extension.</p>
+
+      <h3>Renew paste</h3>
+      <div class="code-block">
+        <pre>curl -i -X PUT "{{ url }}/$PASTE_ID" -H "Key: $PASTE_KEY" -H "Expire-Time: 1d"</pre>
+      </div>
+      <p>This would re-set expire time of the paste to the given value.</p>
+    </main>
+
+    <style>
+     main {
+       max-width: 46rem;
+       padding: 0 0.5rem;
+       margin: 0.5em auto;
+       margin-bottom: 2rem;
+       font-family: "Hiragino Sans GB", "Noto Sans CJK SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+     }
+
+     #title-bar {
+       display: block;
+     }
+     #title-bar h1, #title-bar h2 {
+       display: inline-block;
+       margin-bottom: 0.5em;
+     }
+     #title-bar h1 {
+       font-size: 2.5em;
+       font-weight: 500;
+       margin-bottom: 0.2em;
+     }
+     #title-bar h2 {
+       font-size: 1.25em;
+       font-weight: 400;
+       margin: 0 0 1em 0.2em;
+     }
+
+     h2 {
+       font-size: 1.3em;
+       margin-top: 1em;
+       font-weight: 500;
+     }
+
+     h3 {
+       font-size: 1.15em;
+       font-weight: 500;
+     }
+
+     .code-block {
+       overflow-x: auto;
+     }
+     .code-block pre {
+       line-height: 1.5em;
+     }
+    </style>
+  </body>
+</html>

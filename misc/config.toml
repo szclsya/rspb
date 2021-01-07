@@ -1,0 +1,9 @@
+base_dir = "/var/lib/paste"
+redis_address = "unix:///run/redis/redis.sock"
+bind_address = "127.0.0.1:8080"
+
+[site]
+name = "Random Pastebin"
+slogan = "Paste Stuff."
+description = "Paste stuff here, no guarantee."
+url = "localhost:8080"

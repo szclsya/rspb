@@ -1,0 +1,8 @@
+base_dir = "/home/sya/Temp/paste"
+redis_address = "unix:///run/redis/redis.sock"
+bind_address = "127.0.0.1:8080"
+
+[site]
+name = "Leo's Pastebin"
+description = "Hello there"
+url = "localhost:8080"

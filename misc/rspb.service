@@ -1,0 +1,11 @@
+[Unit]
+Description=Really Simple PasteBin
+After=network.target
+
+[Service]
+Type=exec
+Restart=on-abort
+ExecStart=/usr/local/bin/rspb
+
+[Install]
+WantedBy=default.target
