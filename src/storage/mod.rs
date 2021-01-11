@@ -20,12 +20,10 @@ pub trait Storage: DynClone + Send {
     fn exists(&self, id: &str) -> Result<bool>;
     fn validate(&self, id: &str, key: &str) -> Result<bool>;
     async fn get(&self, &id: &str) -> Result<Response>;
-    async fn get_highlighted_html(&self, id: &str) -> Result<String>;
 
     // Mutating methods
     async fn new(&self, id: &str, key: &str) -> Result<File>;
     fn set_expire_time(&self, id: &str, time: &DateTime<Utc>) -> Result<()>;
-    async fn gen_syntax_highlight(&self, id: &str, extension: &str) -> Result<()>;
     async fn update(&self, id: &str) -> Result<File>;
     async fn delete(&self, id: &str) -> Result<()>;
     async fn cleanup(&self) -> Result<Vec<String>>; // Delete expired pastes

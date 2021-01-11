@@ -1,4 +1,3 @@
-use crate::misc::get_highlighted_html;
 use crate::skip_fail;
 use crate::storage::{Response, Storage};
 
@@ -88,19 +87,6 @@ impl Storage for SimpleStorage {
         }
     }
 
-    async fn get_highlighted_html(&self, id: &str) -> Result<String> {
-        let highlight_path = &self.base_dir.join(id.to_owned() + ".highlight");
-        if !highlight_path.is_file().await {
-            return Err(format_err!("Error: This paste is not highlighted."));
-        }
-
-        let mut file = File::open(&highlight_path).await?;
-        let mut content = String::new();
-        file.read_to_string(&mut content).await?;
-
-        Ok(content)
-    }
-
     async fn new(&self, id: &str, key: &str) -> Result<File> {
         if self.exists(id)? {
             return Err(format_err!("A paste with this id already exists"));
@@ -120,31 +106,6 @@ impl Storage for SimpleStorage {
         let expire_time_key = String::from("expire_time") + "." + id;
         let time_string: String = time.to_rfc3339();
         self.db.insert(&expire_time_key, time_string.as_str())?;
-        Ok(())
-    }
-
-    async fn gen_syntax_highlight(&self, id: &str, extension: &str) -> Result<()> {
-        let content = match self.get(id).await? {
-            Response::Content(c) => c,
-            Response::Stream(_s) => {
-                return Err(format_err!("Paste too large to highlight"));
-            }
-        };
-
-        let string = String::from_utf8(content)?;
-        if string.len() > 50000 {
-            return Err(format_err!("Paste too large to highlight"));
-        }
-
-        let html = get_highlighted_html(&string, extension)?;
-        let highlight_path = &self.base_dir.join(id.to_owned() + ".highlight");
-        // Write the product to file
-        if highlight_path.is_file().await {
-            fs::remove_file(&highlight_path).await?;
-        }
-        let mut file = File::create(&highlight_path).await?;
-        file.write_all(html.as_bytes()).await?;
-
         Ok(())
     }
 

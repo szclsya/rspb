@@ -1,6 +1,5 @@
-use crate::ise_on_err;
-use crate::misc::decode_expire_time;
 use crate::PasteState;
+use crate::api::{Response, ApiError};
 
 use actix_multipart::Multipart;
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
@@ -28,78 +27,57 @@ struct Info {
     expire_time: Option<DateTime<Utc>>,
 }
 
-#[derive(Serialize)]
-struct Response {
-    success: bool,
-    message: Option<String>,
-    info: Option<Info>,
-}
-
 pub async fn post(
     data: web::Data<PasteState>,
     mut payload: Multipart,
     req: HttpRequest,
-) -> impl Responder {
+) -> Result<HttpResponse, ApiError> {
+    // Parse expire time
     let expire_time = match req.headers().get("Expire-After") {
-        Some(t) => match decode_expire_time(&t.to_str().unwrap()) {
-            Ok(t) => Some(Utc::now() + Duration::minutes(t as i64)),
-            Err(err) => {
-                return HttpResponse::BadRequest().body(err.to_string());
+        Some(t) => {
+            let minutes = t.to_str()?.to_string().parse::<i64>()?;
+            if minutes > 0 {
+                Some(Utc::now() + Duration::minutes(minutes))
+            } else {
+                None
             }
         },
-        None => None,
+        None => None
     };
 
     // Get unused key
     let mut id = gen_paste_id();
-    while ise_on_err!(data.storage.inner.exists(&id)) {
+    while data.storage.inner.exists(&id)? {
         id = gen_paste_id();
     }
     let key = gen_key();
 
-    let mut res = Response {
+    let mut res: Response<Info> = Response {
         success: false,
-        message: None,
+        message: String::new(),
         info: None,
     };
 
     info!("NEW paste {:?} expire at {:?}.", id, expire_time);
 
     // iterate over multipart stream
-    let mut file = ise_on_err!(data.storage.inner.new(&id, &key).await);
+    let mut file = data.storage.inner.new(&id, &key).await?;
     while let Ok(Some(mut field)) = payload.try_next().await {
+        debug!("Processing field with disposition {:?}", field.content_disposition());
         while let Some(chunk) = field.next().await {
             let data = chunk.unwrap();
             match file.write_all(&data).await {
                 Ok(_res) => continue,
                 Err(_err) => {
-                    res.message = Some("Connection error: upload interrupted.".to_string());
-                    let json = serde_json::to_string_pretty(&res).unwrap();
-                    return HttpResponse::InternalServerError().body(&json);
+                    return Err(ApiError::Unknown("Connection error: upload interrupted.".to_string()));
                 }
             };
         }
     }
-    // See if we need to highlight it
-    match req.headers().get("Syntax-Highlight") {
-        Some(s) => {
-            debug!("Generating highlight for {}", &id);
-            match data
-                .storage
-                .inner
-                .gen_syntax_highlight(&id, &s.to_str().unwrap())
-                .await
-            {
-                Ok(_ok) => (),
-                Err(_err) => res.message = Some("Syntax highlighting failed.".to_string()),
-            }
-        }
-        None => (),
-    }
 
     // Set expire time
     if let Some(t) = expire_time {
-        ise_on_err!(data.storage.inner.set_expire_time(&id, &t));
+        data.storage.inner.set_expire_time(&id, &t)?;
     }
 
     let info = Info {
@@ -110,5 +88,5 @@ pub async fn post(
 
     res.success = true;
     res.info = Some(info);
-    return HttpResponse::Ok().body(serde_json::to_string_pretty(&res).unwrap());
+    Ok(HttpResponse::Ok().json(&res))
 }

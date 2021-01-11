@@ -114,53 +114,12 @@ impl Storage for RedisCachedStorage {
         }
     }
 
-    async fn get_highlighted_html(&self, id: &str) -> Result<String> {
-        // First check if content is in redis
-        let mut con = self.con.clone();
-        let content_redis_location = String::from(id) + ".highlight";
-        let exists_in_redis = match con.exists(&content_redis_location).await {
-            Ok(res) => res,
-            Err(_err) => {
-                return self.backend.get_highlighted_html(id).await;
-            }
-        };
-
-        if exists_in_redis {
-            debug!("Highlighted paste hit cache.");
-            let result = match con.get(&content_redis_location).await {
-                Ok(res) => res,
-                Err(_err) => {
-                    return self.backend.get_highlighted_html(id).await;
-                }
-            };
-            return Ok(result);
-        } else {
-            debug!("Highlighted paste miss cache, adding...");
-            let content = self.backend.get_highlighted_html(id).await?;
-            // Try to write to the redis cache
-            let res = con
-                .set::<&str, &str, ()>(&content_redis_location, &content)
-                .await;
-            match res {
-                Ok(_ok) => (),
-                Err(err) => warn!("Failed to write to Redis: {}", err.to_string()),
-            };
-            return Ok(content);
-        }
-    }
-
     async fn new(&self, id: &str, key: &str) -> Result<File> {
         self.backend.new(id, key).await
     }
 
     fn set_expire_time(&self, id: &str, time: &DateTime<Utc>) -> Result<()> {
         self.backend.set_expire_time(id, time)
-    }
-
-    async fn gen_syntax_highlight(&self, id: &str, extension: &str) -> Result<()> {
-        self.backend.gen_syntax_highlight(id, extension).await?;
-        self.delete_in_redis(id).await?;
-        Ok(())
     }
 
     async fn update(&self, id: &str) -> Result<File> {

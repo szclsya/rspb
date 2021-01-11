@@ -3,7 +3,6 @@ use crate::storage::Response;
 use crate::PasteState;
 
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
-use anyhow::{format_err, Result};
 use log::{debug, warn};
 use regex::Regex;
 
@@ -25,28 +24,6 @@ pub async fn get(
     let mut id = info.clone();
     id.truncate(6); // Only use first 6 elements
     debug!("GET paste with id {}.", &id);
-
-    // Get query strings
-    let queries_result = parse_query_string(req.query_string());
-    let args = match queries_result {
-        Ok(arg) => arg,
-        Err(_err) => {
-            return HttpResponse::BadRequest().body("Error: Malformed query string.");
-        }
-    };
-
-    // Get highlighted paste
-    if args.contains_key("syntax") && args.get("syntax").unwrap() == "on" {
-        debug!("Syntax highlighting requested.");
-        match data.storage.inner.get_highlighted_html(&id).await {
-            Ok(content) => {
-                return HttpResponse::Ok().body(content);
-            }
-            Err(_e) => {
-                return HttpResponse::NotFound().body("Error: Highlighted paste not found.");
-            }
-        }
-    }
 
     // Get paste content
     let content = data.storage.inner.get(&id).await;
