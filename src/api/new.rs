@@ -12,12 +12,16 @@ use rand::{thread_rng, Rng};
 use serde::Serialize;
 use tokio::io::AsyncWriteExt;
 
-fn gen_paste_id() -> String {
-    thread_rng().sample_iter(&Alphanumeric).take(6).collect()
-}
+const ID_LEN: usize = 6;
+const KEY_LEN: usize = 10;
 
-fn gen_key() -> String {
-    thread_rng().sample_iter(&Alphanumeric).take(10).collect()
+fn gen_random_chars(len: usize) -> String {
+    let mut rng = thread_rng();
+    std::iter::repeat(())
+        .map(|()| rng.sample(Alphanumeric))
+        .map(char::from)
+        .take(len)
+        .collect()
 }
 
 #[derive(Serialize)]
@@ -46,11 +50,11 @@ pub async fn post(
     };
 
     // Get unused key
-    let mut id = gen_paste_id();
+    let mut id = gen_random_chars(ID_LEN);
     while data.storage.inner.exists(&id)? {
-        id = gen_paste_id();
+        id = gen_random_chars(ID_LEN);
     }
-    let key = gen_key();
+    let key = gen_random_chars(KEY_LEN);
 
     let mut res: Response<Info> = Response {
         success: false,

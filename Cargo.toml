@@ -12,26 +12,25 @@ async-std = "1"
 futures = "0.3"
 actix = "0.10"
 actix-web = "3"
-actix-cors = "0.5"
 actix-multipart = "0.3"
 actix-web-static-files = "3.0"
 # Intentionally downgrade tokio* to make bytes compatible with actix
-tokio = { version = "0.2.23", features = ["full"] }
-tokio-util = { version = "0.3.1", features = ["codec"] }
-yarte = "0.10"
-redis = { version = "0.18", features = ["async-std-comp", "connection-manager"] }
+tokio = { version = "0.2", features = ["full"] }
+tokio-util = { version = "0.3", features = ["codec"] }
+yarte = "0.14"
+redis = { version = "0.19", features = ["async-std-comp", "connection-manager"] }
 sled = "0.34"
 serde = "1"
 toml = "0.5"
 chrono = { version = "0.4", features = ["serde"] }
 regex = "1"
-rand = "0.7"
+rand = { version = "0.8", features = ["std"] }
 anyhow = "1"
 async-trait = "0.1"
 dyn-clone = "1"
 clap = "2"
 log = "0.4"
-env_logger = "0.7.1"
+env_logger = "0.8"
 color-backtrace = "0.5"
 
 [build-dependencies]
