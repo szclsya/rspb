@@ -43,18 +43,14 @@ impl From<anyhow::Error> for ApiError {
 }
 
 impl From<ParseIntError> for ApiError {
-    fn from(err: ParseIntError) -> Self {
-        match err {
-            _ => ApiError::BadRequest("Bad Integer in Request".to_string()),
-        }
+    fn from(_err: ParseIntError) -> Self {
+        ApiError::BadRequest("Bad Integer in Request".to_string())
     }
 }
 
 impl From<ToStrError> for ApiError {
-    fn from(err: ToStrError) -> Self {
-        match err {
-            _ => ApiError::BadRequest("Bad Header".to_string()),
-        }
+    fn from(_err: ToStrError) -> Self {
+        ApiError::BadRequest("Bad Header".to_string())
     }
 }
 

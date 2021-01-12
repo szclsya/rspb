@@ -8,7 +8,7 @@ use anyhow::{format_err, Result};
 use async_std::path::Path;
 use async_trait::async_trait;
 use chrono::prelude::*;
-use log::{debug, error, info, warn};
+use log::{debug, info, warn};
 use redis::aio::MultiplexedConnection;
 use redis::AsyncCommands;
 use tokio::fs::File;
@@ -114,12 +114,20 @@ impl Storage for RedisCachedStorage {
         }
     }
 
+    fn get_name(&self, id: &str) -> Result<Option<String>> {
+        self.backend.get_name(id)
+    }
+
     async fn new(&self, id: &str, key: &str) -> Result<File> {
         self.backend.new(id, key).await
     }
 
     fn set_expire_time(&self, id: &str, time: &DateTime<Utc>) -> Result<()> {
         self.backend.set_expire_time(id, time)
+    }
+
+    fn set_name(&self, id: &str, name: &str) -> Result<()> {
+        self.backend.set_name(id, name)
     }
 
     async fn update(&self, id: &str) -> Result<File> {

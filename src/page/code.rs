@@ -2,7 +2,7 @@ use crate::storage::Response;
 use crate::PasteState;
 
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
-use log::{debug, info, warn};
+use log::debug;
 use regex::Regex;
 use yarte::Template;
 
@@ -10,6 +10,8 @@ use yarte::Template;
 #[template(path = "code")]
 struct CodeTemplate {
     title: String,
+    id: String,
+    name: String,
     file_ext: String,
     file_content: String,
 }
@@ -47,8 +49,20 @@ pub async fn render(
         }
     };
 
+    let name = match data.storage.inner.get_name(&id) {
+        Ok(name) => {
+            match name {
+                Some(n) => n,
+                None => "untitled".to_string(),
+            }
+        },
+        Err(_e) => { return HttpResponse::InternalServerError().body("Internal Server Error") },
+    };
+
     let ctx = CodeTemplate {
         title: data.config.site.name.clone(),
+        name,
+        id: id.clone(),
         file_ext: lang.clone(),
         file_content: code,
     };

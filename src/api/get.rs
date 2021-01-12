@@ -1,9 +1,8 @@
-use crate::misc::parse_query_string;
 use crate::storage::Response;
 use crate::PasteState;
 
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
-use log::{debug, warn};
+use log::debug;
 use regex::Regex;
 
 use actix_web::web::BytesMut;

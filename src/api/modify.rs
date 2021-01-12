@@ -38,41 +38,40 @@ pub async fn put(
         return Err(ApiError::BadRequest("Invalid key for paste.".to_string()));
     }
 
-    match headers.get("Update-Content") {
-        Some(arg) => {
-            if arg == "y" {
-                // iterate over multipart stream
-                let mut file = data.storage.inner.update(&id).await?;
-                while let Ok(Some(mut field)) = payload.try_next().await {
-                    while let Some(chunk) = field.next().await {
-                        let data = chunk.unwrap();
-                        match file.write_all(&data).await {
-                            Ok(_res) => continue,
-                            Err(_err) => {
-                                return Err(ApiError::Unknown(
-                                    "Connection error: upload interrupted.".to_string(),
-                                ));
-                            }
-                        };
-                    }
+    if let Some(arg) = headers.get("Update-Content") {
+        if arg == "y" {
+            // iterate over multipart stream
+            let mut file = data.storage.inner.update(&id).await?;
+            while let Ok(Some(mut field)) = payload.try_next().await {
+                while let Some(chunk) = field.next().await {
+                    let data = chunk.unwrap();
+                    match file.write_all(&data).await {
+                        Ok(_res) => continue,
+                        Err(_err) => {
+                            return Err(ApiError::Unknown(
+                                "Connection error: upload interrupted.".to_string(),
+                            ));
+                        }
+                    };
                 }
             }
         }
-        None => (),
     }
 
     // Parse expire time
-    match req.headers().get("Expire-After") {
-        Some(t) => {
-            let s = t.to_str()?.to_string();
-            let minutes = s.parse::<i64>()?;
-            if minutes > 0 {
-                let t = Utc::now() + Duration::minutes(minutes);
-                data.storage.inner.set_expire_time(&id, &t)?;
-            }
+    if let Some(t) = req.headers().get("Expire-After") {
+        let s = t.to_str()?.to_string();
+        let minutes = s.parse::<i64>()?;
+        if minutes > 0 {
+            let t = Utc::now() + Duration::minutes(minutes);
+            data.storage.inner.set_expire_time(&id, &t)?;
         }
-        None => (),
-    };
+    }
+
+    // Update name
+    if let Some(name) = req.headers().get("Name") {
+        data.storage.inner.set_name(&id, name.to_str()?)?;
+    }
 
     // We have a success if we manage to get here
     response.success = true;

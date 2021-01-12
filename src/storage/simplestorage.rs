@@ -5,11 +5,11 @@ use anyhow::{format_err, Result};
 use async_std::path::{Path, PathBuf};
 use async_trait::async_trait;
 use chrono::prelude::*;
-use log::{debug, error, info};
+use log::{debug, error};
 use serde::{Deserialize, Serialize};
 use tokio::fs;
 use tokio::fs::File;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::AsyncReadExt;
 use tokio_util::codec::{BytesCodec, FramedRead};
 
 // In bytes
@@ -87,6 +87,14 @@ impl Storage for SimpleStorage {
         }
     }
 
+    fn get_name(&self, id: &str) -> Result<Option<String>> {
+        let name_key = String::from("name") + "." + id;
+        match self.db.get(&name_key)? {
+            Some(v) => Ok(Some(String::from_utf8(v.to_vec())?)),
+            None => Ok(None),
+        }
+    }
+
     async fn new(&self, id: &str, key: &str) -> Result<File> {
         if self.exists(id)? {
             return Err(format_err!("A paste with this id already exists"));
@@ -106,6 +114,12 @@ impl Storage for SimpleStorage {
         let expire_time_key = String::from("expire_time") + "." + id;
         let time_string: String = time.to_rfc3339();
         self.db.insert(&expire_time_key, time_string.as_str())?;
+        Ok(())
+    }
+
+    fn set_name(&self, id: &str, name: &str) -> Result<()> {
+        let name_key = String::from("name") + "." + id;
+        self.db.insert(&name_key, name)?;
         Ok(())
     }
 

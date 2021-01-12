@@ -10,14 +10,14 @@
     <link rel="stylesheet" href="/static/css/rspbw.css">
   </head>
   <body>
-    <main>
-      <div id="title-bar">
-        <h1>{{ title }}</h1>
-        <h2>Placeholder</h2>
+    <div id="code-display">
+      <div class="meta">
+        <p style="font-size: 1.2em">{{ title }} / <a href="/{{ id }}/{{ file_ext }}" alt="paste">{{ id }}</a></p>
+        <p>Name: {{ name }}</p>
       </div>
-    </main>
+      <pre><code class="language-{{ file_ext }}">{{ file_content }}</code></pre>
+    </div>
 
-    <pre id="code-display"><code class="language-{{ file_ext }}">{{ file_content }}</code></pre>
 
     <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.5.0/build/highlight.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.5.0/build/languages/{{ file_ext }}.min.js"></script>

@@ -108,6 +108,7 @@ function create() {
   update_card(create_status, working_card_class, "Uploading", "Hang tight...");
 
   const val = text_input.value;
+  const name = create.querySelector('.name').value;
   const exp_time = create.querySelector('.expire-in').value;
   const exp_time_unit = create.querySelector('.expire-time-unit').value;
 
@@ -128,6 +129,10 @@ function create() {
   let h = new Headers();
   if (exp_time.length != 0) {
     h.append("Expire-After", exp_time * exp_time_unit);
+  }
+
+  if (name.length != 0) {
+    h.append("Name", name);
   }
 
   const req = new Request('/',
@@ -178,6 +183,12 @@ function modify() {
   } else if (content.length > 0) {
     formData.append('c', content);
     h.append('Update-Content', 'y');
+  }
+
+  // Update name
+  const name = create.querySelector('.name').value;
+  if (name.length > 0) {
+    h.append("Name", name);
   }
 
   // Update expire time

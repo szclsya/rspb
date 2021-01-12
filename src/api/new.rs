@@ -2,14 +2,14 @@ use crate::api::{ApiError, Response};
 use crate::PasteState;
 
 use actix_multipart::Multipart;
-use actix_web::{web, HttpRequest, HttpResponse, Responder};
+use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::prelude::*;
 use chrono::Duration;
 use futures::{StreamExt, TryStreamExt};
 use log::{debug, info};
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use tokio::io::AsyncWriteExt;
 
 fn gen_paste_id() -> String {
@@ -83,6 +83,10 @@ pub async fn post(
     // Set expire time
     if let Some(t) = expire_time {
         data.storage.inner.set_expire_time(&id, &t)?;
+    }
+
+    if let Some(name) = req.headers().get("Name") {
+        data.storage.inner.set_name(&id, name.to_str()?)?;
     }
 
     let info = Info {

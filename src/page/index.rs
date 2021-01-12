@@ -1,6 +1,6 @@
 use crate::PasteState;
 
-use actix_web::{web, HttpRequest, HttpResponse, Responder};
+use actix_web::{web, HttpResponse, Responder};
 use yarte::Template;
 
 #[derive(Template)]

@@ -19,11 +19,13 @@ pub trait Storage: DynClone + Send {
     // Non-mutating methods
     fn exists(&self, id: &str) -> Result<bool>;
     fn validate(&self, id: &str, key: &str) -> Result<bool>;
-    async fn get(&self, &id: &str) -> Result<Response>;
+    async fn get(&self, id: &str) -> Result<Response>;
+    fn get_name(&self, id: &str) -> Result<Option<String>>;
 
     // Mutating methods
     async fn new(&self, id: &str, key: &str) -> Result<File>;
     fn set_expire_time(&self, id: &str, time: &DateTime<Utc>) -> Result<()>;
+    fn set_name(&self, id: &str, name: &str) -> Result<()>;
     async fn update(&self, id: &str) -> Result<File>;
     async fn delete(&self, id: &str) -> Result<()>;
     async fn cleanup(&self) -> Result<Vec<String>>; // Delete expired pastes

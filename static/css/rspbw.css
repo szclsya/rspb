@@ -339,6 +339,7 @@ template {
 
 body {
   padding-bottom: 2.5em;
+  font-family: "Source Sans Pro", "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
 }
 
 main {
@@ -346,7 +347,6 @@ main {
   padding: 0 0.5em;
   margin: 0.5em auto;
   margin-bottom: 2em;
-  font-family: "Source Sans Pro", "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
 }
 
 h2 {
@@ -387,7 +387,7 @@ textarea {
 }
 
 #code-display {
-  margin: 0 3em;
+  margin: 2em 3em;
 }
 @media screen and (max-width: 56rem) {
   #code-display {
