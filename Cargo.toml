@@ -5,13 +5,16 @@ authors = ["Leo Shen <i@szclsya.me>"]
 edition = "2018"
 readme = "README.org"
 license = "GPL-3.0-or-later"
+build = "build.rs"
 
 [dependencies]
 async-std = "1"
 futures = "0.3"
 actix = "0.10"
 actix-web = "3"
+actix-cors = "0.5"
 actix-multipart = "0.3"
+actix-web-static-files = "3.0"
 # Intentionally downgrade tokio* to make bytes compatible with actix
 tokio = { version = "0.2.23", features = ["full"] }
 tokio-util = { version = "0.3.1", features = ["codec"] }
@@ -30,3 +33,6 @@ clap = "2"
 log = "0.4"
 env_logger = "0.7.1"
 color-backtrace = "0.5"
+
+[build-dependencies]
+actix-web-static-files = "3.0"

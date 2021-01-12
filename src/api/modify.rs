@@ -1,5 +1,5 @@
+use crate::api::{ApiError, Response};
 use crate::PasteState;
-use crate::api::{Response, ApiError};
 
 use actix_multipart::Multipart;
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -17,7 +17,7 @@ pub async fn put(
     let mut response: Response<()> = Response {
         success: false,
         message: String::new(),
-        info: None
+        info: None,
     };
 
     let headers = req.headers();
@@ -49,7 +49,9 @@ pub async fn put(
                         match file.write_all(&data).await {
                             Ok(_res) => continue,
                             Err(_err) => {
-                                return Err(ApiError::Unknown("Connection error: upload interrupted.".to_string()));
+                                return Err(ApiError::Unknown(
+                                    "Connection error: upload interrupted.".to_string(),
+                                ));
                             }
                         };
                     }
@@ -68,8 +70,8 @@ pub async fn put(
                 let t = Utc::now() + Duration::minutes(minutes);
                 data.storage.inner.set_expire_time(&id, &t)?;
             }
-        },
-        None => ()
+        }
+        None => (),
     };
 
     // We have a success if we manage to get here

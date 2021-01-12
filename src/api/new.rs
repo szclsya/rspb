@@ -1,5 +1,5 @@
+use crate::api::{ApiError, Response};
 use crate::PasteState;
-use crate::api::{Response, ApiError};
 
 use actix_multipart::Multipart;
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
@@ -41,8 +41,8 @@ pub async fn post(
             } else {
                 None
             }
-        },
-        None => None
+        }
+        None => None,
     };
 
     // Get unused key
@@ -63,13 +63,18 @@ pub async fn post(
     // iterate over multipart stream
     let mut file = data.storage.inner.new(&id, &key).await?;
     while let Ok(Some(mut field)) = payload.try_next().await {
-        debug!("Processing field with disposition {:?}", field.content_disposition());
+        debug!(
+            "Processing field with disposition {:?}",
+            field.content_disposition()
+        );
         while let Some(chunk) = field.next().await {
             let data = chunk.unwrap();
             match file.write_all(&data).await {
                 Ok(_res) => continue,
                 Err(_err) => {
-                    return Err(ApiError::Unknown("Connection error: upload interrupted.".to_string()));
+                    return Err(ApiError::Unknown(
+                        "Connection error: upload interrupted.".to_string(),
+                    ));
                 }
             };
         }

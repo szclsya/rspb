@@ -1,4 +1,4 @@
-use crate::api::{Response, ApiError};
+use crate::api::{ApiError, Response};
 use crate::PasteState;
 
 use actix_web::{web, HttpRequest, HttpResponse};

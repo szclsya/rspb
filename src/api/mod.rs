@@ -3,9 +3,9 @@ pub mod get;
 pub mod modify;
 pub mod new;
 
-use actix_web::{HttpResponse, error::ResponseError, http::StatusCode, http::header::ToStrError};
+use actix_web::{error::ResponseError, http::header::ToStrError, http::StatusCode, HttpResponse};
+use serde::Serialize;
 use std::num::ParseIntError;
-use serde::{Serialize};
 
 #[derive(Serialize)]
 pub struct Response<I> {
@@ -19,7 +19,7 @@ pub enum ApiError {
     BadRequest(String),
     NotFound,
     Forbidden,
-    Unknown(String)
+    Unknown(String),
 }
 
 impl std::fmt::Display for ApiError {
@@ -37,7 +37,7 @@ impl std::fmt::Display for ApiError {
 impl From<anyhow::Error> for ApiError {
     fn from(err: anyhow::Error) -> Self {
         match err {
-            _ => ApiError::Unknown("Internal Server Error".to_string())
+            _ => ApiError::Unknown("Internal Server Error".to_string()),
         }
     }
 }
@@ -45,7 +45,7 @@ impl From<anyhow::Error> for ApiError {
 impl From<ParseIntError> for ApiError {
     fn from(err: ParseIntError) -> Self {
         match err {
-            _ => ApiError::BadRequest("Bad Integer in Request".to_string())
+            _ => ApiError::BadRequest("Bad Integer in Request".to_string()),
         }
     }
 }
@@ -53,7 +53,7 @@ impl From<ParseIntError> for ApiError {
 impl From<ToStrError> for ApiError {
     fn from(err: ToStrError) -> Self {
         match err {
-            _ => ApiError::BadRequest("Bad Header".to_string())
+            _ => ApiError::BadRequest("Bad Header".to_string()),
         }
     }
 }
@@ -62,7 +62,7 @@ impl ResponseError for ApiError {
     fn status_code(&self) -> StatusCode {
         match self {
             Self::BadRequest(_m) => StatusCode::BAD_REQUEST,
-            Self::NotFound  => StatusCode::NOT_FOUND,
+            Self::NotFound => StatusCode::NOT_FOUND,
             Self::Forbidden => StatusCode::FORBIDDEN,
             Self::Unknown(_m) => StatusCode::INTERNAL_SERVER_ERROR,
         }

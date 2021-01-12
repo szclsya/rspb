@@ -1,0 +1,55 @@
+@import 'normalize'
+
+$sansSerifFonts : 'Source Sans Pro', 'Hiragino Sans GB', 'Noto Sans CJK SC', 'Microsoft YaHei', sans-serif
+$serifFonts : 'Source Serif Pro', 'Noto Serif CJK SC', 'Songti SC', 'Microsoft YaHei', serif
+$monospaceFonts : 'Source Code Pro', 'Hiragino Sans GB', 'Noto Sans CJK SC', 'Microsoft YaHei', monospace
+
+body
+  padding-bottom: 2.5em
+
+main
+  max-width: 51rem
+  padding: 0 .5em
+  margin: .5em auto
+  margin-bottom: 2em
+  font-family: $sansSerifFonts
+  
+h2
+  font-weight: 500
+  font-size: 1.5em
+  margin-top: 1.25em
+
+h3
+  font-weight: 400
+  font-size: 1.3em
+
+#title-bar
+  display: block
+  h1, h2
+    display: inline-block
+    margin-bottom: .5em
+  h1
+    font-size: 2.5em
+    font-weight: 500
+    margin-bottom: .2em
+  h2
+    font-size: 1.25em
+    font-weight: 400
+    margin: 0 0 1em .2em
+
+textarea
+  width: 100%
+  min-height: 20em
+  margin-bottom: 1em
+  padding: .5em
+  font-family: $monospaceFonts
+
+#code-display
+  @media screen and (max-width: 56rem)
+    margin: 0 1em
+  margin: 0 3em
+  code
+    padding: 1.5em
+
+.nav
+  margin-bottom: 1em

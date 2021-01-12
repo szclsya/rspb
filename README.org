@@ -25,6 +25,9 @@ maxmemory-policy allkeys-lru
 
 * API
 ** Paste CURD
+*** Get Paste
+GET/{id}
+
 *** Create paste
 POST /
 
@@ -69,8 +72,6 @@ A typical success response:
   "message": null
 }
 #+END_SRC
-
-If syntax highlighting failed, ~success~ field will still report ~true~ but message will contain a message =Syntax highlighting failed.=.
 
 ** Delete paste
 DELETE /{id}

@@ -7,9 +7,12 @@ mod page;
 use actix_web::{guard, middleware, rt, web, App, HttpServer};
 use async_std::path::PathBuf;
 use clap::Arg;
-use log::{debug, warn};
+use log::warn;
 use serde::Deserialize;
 use std::time::Duration;
+
+// Static files
+include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
 #[derive(Deserialize, Clone)]
 struct Config {
@@ -36,7 +39,7 @@ pub struct PasteState {
 async fn main() -> std::io::Result<()> {
     color_backtrace::install();
     env_logger::init();
-    //yarte::recompile::when_changed();
+    yarte::recompile::when_changed();
 
     let matches = clap::App::new("rspb")
         .version("0.1")
@@ -74,12 +77,16 @@ async fn main() -> std::io::Result<()> {
     // Run http server
     let c2 = config.clone();
     HttpServer::new(move || {
+        let generated = generate();
         App::new()
             .wrap(middleware::Logger::default())
             .data(PasteState {
                 storage: storage.clone(),
                 config: c2.clone(),
             })
+            .service(
+                web::resource("/f").route(web::route().guard(guard::Get()).to(page::form::render)),
+            )
             .service(
                 web::resource("/")
                     .route(web::route().guard(guard::Get()).to(page::index::render))
@@ -91,6 +98,13 @@ async fn main() -> std::io::Result<()> {
                     .route(web::route().guard(guard::Get()).to(api::get::get))
                     .route(web::route().guard(guard::Put()).to(api::modify::put)),
             )
+            .service(
+                web::resource("/{paste_id}/{lang}")
+                    .route(web::route().guard(guard::Get()).to(page::code::render)),
+            )
+            .service(actix_web_static_files::ResourceFiles::new(
+                "/static", generated,
+            ))
     })
     .bind(&config.bind_address)?
     .run()

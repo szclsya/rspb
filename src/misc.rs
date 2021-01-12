@@ -4,7 +4,7 @@ use std::collections::HashMap;
 pub fn parse_query_string(s: &str) -> Result<HashMap<String, String>> {
     let mut args: HashMap<String, String> = HashMap::new();
 
-    if s.len() != 0 {
+    if !s.is_empty() {
         let args_str: Vec<&str> = s.split(',').collect();
         // Generate arg pairs
         for x in args_str {

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title }}- Form</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
+    <link href="/static/css/rspbw.css" rel="stylesheet">
+  </head>
+  <body>
+    <main>
+      <div class="container">
+        <div id="title-bar">
+          <h1>{{ title }}</h1>
+          <h2>{{ slogan }}</h2>
+        </div>
+
+        <noscript>
+          <div class="card text-black bg-info mb-3">
+            <div class="card-header">JavaScript Required</div>
+            <div class="card-body">
+              <p class="card-text">This form requires JavaScript to function. If JavaScript is not an option, you can use cURL instead. <a href="/">Instructions</a></p>
+            </div>
+        </noscript>
+        
+        <ul class="nav nav-tabs" role="tablist">
+          <li class="nav-item active" role="presentation">
+            <a class="nav-link active" data-bs-toggle="tab" href="#create" role="tab" aria-controls="create" aria-selected="true">Create</a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link" data-bs-toggle="tab" href="#modify" role="tab" aria-controls="modify" aria-selected="false">Modify</a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link" data-bs-toggle="tab" href="#delete" role="tab" aria-controls="delete" aria-selected="false">Delete</a>
+          </li>
+        </ul>
+
+        <div class="tab-content">
+          <div id="create" class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="create-tab">
+            <div class="card text-white bg-primary mb-3 status-card" style="display: none">
+              <div class="card-header state">Test</div>
+              <div class="card-body">
+                <p class="card-text msg">Hang tight...</p>
+              </div>
+            </div>
+
+            <textarea class="text-input"></textarea>
+            <div class="input-group mb-3">
+              <label class="input-group-text" for="createFile">Or, choose a file</label>
+              <input type="file" class="form-control" id="createFile">
+            </div>
+            <div class="input-group mb-3 flex-nowrap">
+              <span class="input-group-text">Expire in</span>
+              <input type="text" class="form-control expire-in">
+              <select class="form-select expire-time-unit" style="max-width: 10em">
+                <option value="60" selected>Hours</option>
+                <option value="1">Minutes</option>
+                <option value="1440">Days</option>
+              </select>
+            </div>
+            <div class="d-grid gap-2">
+              <button type="button" onclick="create()" class="btn btn-outline-primary">Create</button>
+            </div>
+          </div>
+
+          <div id="modify" class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="modify-tab">
+            <div class="card text-white bg-primary mb-3 status-card" style="display: none">
+              <div class="card-header state">Test</div>
+              <div class="card-body">
+                <p class="card-text msg">Hang tight...</p>
+              </div>
+            </div>
+
+            <div class="list-group mb-3 local-paste-list" onload="show_pastes_from_storage(this)">
+            </div>
+
+            <form action="#">
+              <div class="input-group mb-3">
+                <span class="input-group-text">Paste ID</span>
+                <input type="text" aria-label="Paste ID" class="form-control id" required>
+                <span class="input-group-text">Key</span>
+                <input type="text" aria-label="Key" class="form-control key" required>
+              </div>
+              <label for="modify-textarea" class="form-label">Update paste with content</label>
+              <textarea class="text-input mb-3" id="modify-textarea"></textarea>
+              <div class="input-group mb-3">
+                <label class="input-group-text" for="update-with-file">Or, choose a file</label>
+                <input type="file" class="form-control" id="update-with-file">
+              </div>
+              <div class="input-group mb-3">
+                <label class="input-group-text" for="update-with-file">Make paste expire in</label>
+                <input type="text" class="form-control expire-in" placeholder="unmodified">
+                <select class="form-select expire-time-unit" style="max-width: 10em">
+                  <option value="60" selected>Hours</option>
+                  <option value="1">Minutes</option>
+                  <option value="1440">Days</option>
+                </select>
+              </div>
+              <button class="btn btn-primary" onclick="modify()">Update</button>
+            </form>
+          </div>
+
+          <div id="delete" class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="delete-tab">
+            <div class="card text-white bg-primary mb-3 status-card" style="display: none">
+              <div class="card-header state">Test</div>
+              <div class="card-body">
+                <p class="card-text msg">Hang tight...</p>
+              </div>
+            </div>
+
+            <div class="list-group mb-3 local-paste-list" onload="show_pastes_from_storage(this)">
+            </div>
+
+            <form action="#">
+              <div class="input-group mb-3">
+                <span class="input-group-text">Paste ID</span>
+                <input type="text" aria-label="Paste ID" class="form-control id" required>
+                <span class="input-group-text">Key</span>
+                <input type="text" aria-label="Key" class="form-control key" required>
+              </div>
+              <button class="btn btn-primary" onclick="del()">Update</button>
+            </form>
+          </div>
+
+        </div>
+          </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW" crossorigin="anonymous"></script>
+    <script src="/static/js/form.js"></script>
+    <script>
+    </script>
+  </body>
+</html>

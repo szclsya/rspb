@@ -20,7 +20,6 @@ pub async fn get(
         return HttpResponse::NotFound().body("404 Not Found");
     }
 
-    let info = info.into_inner();
     let mut id = info.clone();
     id.truncate(6); // Only use first 6 elements
     debug!("GET paste with id {}.", &id);
@@ -39,7 +38,7 @@ pub async fn get(
         },
         Err(err) => {
             debug!("GET paste with id {} failed: {:?}", &info, err);
-            return HttpResponse::Ok().body("Error: Paste not found.");
+            return HttpResponse::NotFound().body("Error: Paste not found.");
         }
     }
 }

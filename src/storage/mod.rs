@@ -34,7 +34,7 @@ pub struct StorageBox {
 }
 
 impl StorageBox {
-    pub async fn new(base_dir: &Path, redis_addr: Option<String>) -> Result<StorageBox> {
+    pub async fn new(base_dir: &Path, redis_addr: Option<String>) -> Result<Self> {
         match redis_addr {
             Some(addr) => {
                 return Ok(StorageBox {

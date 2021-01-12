@@ -126,8 +126,8 @@ impl Storage for SimpleStorage {
 
         // Actually delete them
         fs::remove_file(paste_path).await?;
-        let key_key = String::from("key") + "." + &id;
-        let expire_time_key = String::from("expire_time") + "." + &id;
+        let key_key = String::from("key") + "." + id;
+        let expire_time_key = String::from("expire_time") + "." + id;
         self.db.remove(&key_key)?;
         self.db.remove(&expire_time_key)?;
 
