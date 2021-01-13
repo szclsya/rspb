@@ -8,6 +8,16 @@ function hide(ele) {
   ele.style.display = 'none';
 }
 
+function fill_paste_name_when_choosing_file(e) {
+  const tab_root = e.closest('.tab-pane');
+  const name = tab_root.querySelector('.name');
+  console.log(`root ${tab_root}, name ${name}`);
+  const files = e.files;
+  if (files.length > 0) {
+    name.value = files[0].name;
+  }
+}
+
 const success_card_class = 'card text-white bg-success mb-3 status-card';
 const working_card_class = 'card text-white bg-secondary mb-3 status-card';
 const fail_card_class = 'card text-black bg-warning mb-3 status-card';
@@ -103,7 +113,7 @@ function create() {
   const create = document.getElementById('create');
   const text_input = create.querySelector('.text-input');
   const create_status = create.querySelector('.status-card');
-  const file_selector = create.querySelector('#createFile');
+  const file_selector = create.querySelector('.paste-from-file');
 
   update_card(create_status, working_card_class, "Uploading", "Hang tight...");
 
@@ -175,7 +185,7 @@ function modify() {
 
   // Update content
   const content = modify.querySelector('#modify-textarea').value;
-  const files = modify.querySelector('#update-with-file').files;
+  const files = modify.querySelector('.paste-from-file').files;
   const formData = new FormData();
   if (files.length > 0) {
     formData.append('c', files[0]);

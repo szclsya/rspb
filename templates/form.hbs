@@ -53,7 +53,7 @@
             <textarea class="text-input"></textarea>
             <div class="input-group mb-3">
               <label class="input-group-text" for="createFile">Or, choose a file</label>
-              <input type="file" class="form-control" id="createFile">
+              <input type="file" class="form-control paste-from-file" onchange="fill_paste_name_when_choosing_file(this)">
             </div>
             <div class="input-group mb-3 flex-nowrap">
               <span class="input-group-text">Expire in</span>
@@ -80,7 +80,7 @@
             <div class="list-group mb-3 local-paste-list" onload="show_pastes_from_storage(this)">
             </div>
 
-            <form action="#">
+            <form action="javascript:void(0);">
               <div class="input-group mb-3">
                 <span class="input-group-text">Paste ID</span>
                 <input type="text" aria-label="Paste ID" class="form-control id" required>
@@ -95,7 +95,7 @@
               <textarea class="text-input mb-3" id="modify-textarea"></textarea>
               <div class="input-group mb-3">
                 <label class="input-group-text" for="update-with-file">Or, choose a file</label>
-                <input type="file" class="form-control" id="update-with-file">
+                <input type="file" class="form-control paste-from-file" onchange="fill_paste_name_when_choosing_file(this)">
               </div>
               <div class="input-group mb-3">
                 <label class="input-group-text" for="update-with-file">Make paste expire in</label>
@@ -121,7 +121,7 @@
             <div class="list-group mb-3 local-paste-list" onload="show_pastes_from_storage(this)">
             </div>
 
-            <form action="#">
+            <form action="javascript:void(0);">
               <div class="input-group mb-3">
                 <span class="input-group-text">Paste ID</span>
                 <input type="text" aria-label="Paste ID" class="form-control id" required>

@@ -39,7 +39,7 @@ pub struct PasteState {
 async fn main() -> std::io::Result<()> {
     color_backtrace::install();
     env_logger::init();
-    yarte::recompile::when_changed();
+    //yarte::recompile::when_changed();
 
     let matches = clap::App::new("rspb")
         .version("0.1")
