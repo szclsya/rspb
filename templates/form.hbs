@@ -30,6 +30,9 @@
             <a class="nav-link active" data-bs-toggle="tab" href="#create" role="tab" aria-controls="create" aria-selected="true">Create</a>
           </li>
           <li class="nav-item" role="presentation">
+            <a class="nav-link" data-bs-toggle="tab" href="#view" role="tab" aria-controls="view" aria-selected="false">View</a>
+          </li>
+          <li class="nav-item" role="presentation">
             <a class="nav-link" data-bs-toggle="tab" href="#modify" role="tab" aria-controls="modify" aria-selected="false">Modify</a>
           </li>
           <li class="nav-item" role="presentation">
@@ -38,7 +41,7 @@
         </ul>
 
         <div class="tab-content">
-          <div id="create" class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="create-tab">
+          <div id="create" class="tab-pane fade show active" role="tabpanel" aria-labelledby="create-tab">
             <div class="card text-white bg-primary mb-3 status-card" style="display: none">
               <div class="card-header state">Test</div>
               <div class="card-body">
@@ -69,7 +72,23 @@
             </div>
           </div>
 
-          <div id="modify" class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="modify-tab">
+          <div id="view" class="tab-pane fade" role="tabpanel" aria-labelledby="view-tab">
+            <div class="list-group mb-3 local-paste-list" onload="show_pastes_from_storage(this)">
+            </div>
+
+            <form action="javascript:void(0);">
+              <div class="input-group mb-3">
+                <span class="input-group-text">Paste ID</span>
+                <input type="text" aria-label="Paste ID" class="form-control id" required>
+              </div>
+              <div class="input-group mb-3">
+                <span class="input-group-text">Language name or file extension</span>
+                <input type="text" aria-label="Paste ID" class="form-control file-ext">
+              </div>
+            </form>
+          </div>
+
+          <div id="modify" class="tab-pane fade" role="tabpanel" aria-labelledby="modify-tab">
             <div class="card text-white bg-primary mb-3 status-card" style="display: none">
               <div class="card-header state">Test</div>
               <div class="card-body">
@@ -106,7 +125,9 @@
                   <option value="1440">Days</option>
                 </select>
               </div>
-              <button class="btn btn-primary" onclick="modify()">Update</button>
+              <div class="row">
+                <button class="btn btn-outline-primary" onclick="modify()">Update</button>
+              </div>
             </form>
           </div>
 
@@ -128,7 +149,9 @@
                 <span class="input-group-text">Key</span>
                 <input type="text" aria-label="Key" class="form-control key" required>
               </div>
-              <button class="btn btn-primary" onclick="del()">Update</button>
+              <div class="row">
+                <button class="btn btn-outline-danger" onclick="del()">Delete</button>
+              </div>
             </form>
           </div>
 
@@ -139,6 +162,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW" crossorigin="anonymous"></script>
     <script src="/static/js/form.min.js"></script>
     <script>
+     update_paste_list()
     </script>
   </body>
 </html>

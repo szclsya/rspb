@@ -62,8 +62,24 @@ function add_paste_to_storage(paste) {
 function expire_paste_in_storage() {
   const array = get_pastes();
   const result = array.filter((paste) => {
+    if (paste.expire_time === null) {
+      return true;
+    }
     let expire_time = new Date(paste.expire_time);
+    console.log(expire_time);
     if (expire_time.getTime() > Date.now()) {
+      return true;
+    } else {
+      return false;
+    }
+  });
+  window.localStorage.setItem('pastes', JSON.stringify(result));
+}
+
+function delete_paste_in_storage(id) {
+  const array = get_pastes();
+  const result = array.filter((paste) => {
+    if (paste.id != id) {
       return true;
     } else {
       return false;
@@ -102,7 +118,7 @@ function fill_id_and_key(e, id, key) {
   e.querySelector('.key').value = key;
 }
 
-function update_status_card() {
+function update_paste_list() {
   show_pastes_from_storage(document.getElementById('modify'));
   show_pastes_from_storage(document.getElementById('delete'));
 }
@@ -153,17 +169,18 @@ function create() {
     .then(res => {
       if (res.success) {
         let result_msg = `Paste ID: <a href=${res.info.id}>${res.info.id}</a>, modify key: ${res.info.key}. `;
+        let t = null;
         if (res.info.expire_time != null) {
-          let t = new Date(res.info.expire_time);
+          t = new Date(res.info.expire_time);
           result_msg += `Expire at ${t.toLocaleString()}.`;
         }
         update_card(create_status, success_card_class, "Success", result_msg);
         add_paste_to_storage({
           id: res.info.id,
           key: res.info.key,
-          expire_time: new Date(res.info.expire_time),
+          expire_time: t,
         });
-        update_status_card();
+        update_paste_list();
       } else {
         update_card(create_status, fail_card_class, "Failed", res.message);
       }
@@ -196,7 +213,7 @@ function modify() {
   }
 
   // Update name
-  const name = create.querySelector('.name').value;
+  const name = modify.querySelector('.name').value;
   if (name.length > 0) {
     h.append("Name", name);
   }
@@ -246,6 +263,8 @@ function del() {
     .then((res) => {
       if (res.success) {
         update_card(card, success_card_class, "Success", "Paste has been deleted.");
+        delete_paste_in_storage(id);
+        update_paste_list();
       } else {
         update_card(card, fail_card_class, "Failed", res.message);
       }
