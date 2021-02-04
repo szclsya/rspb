@@ -7,6 +7,7 @@ use async_trait::async_trait;
 use chrono::prelude::*;
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
+use std::convert::TryInto;
 use tokio::fs;
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
@@ -95,6 +96,21 @@ impl Storage for SimpleStorage {
         }
     }
 
+    fn size(&self, id: &str) -> Result<u64> {
+        let size_key = String::from("size") + "." + id;
+        match self.db.get(&size_key)? {
+            Some(s) => {
+                let be_size_vec= s.to_vec();
+                let num = be_size_vec.try_into();
+                match num {
+                    Ok(num) => Ok(u64::from_be_bytes(num)),
+                    Err(_e) => Err(format_err!("Internal error".to_string())),
+                }
+            },
+            None => Err(format_err!("Paste not found".to_string())),
+        }
+    }
+
     async fn new(&self, id: &str, key: &str) -> Result<File> {
         if self.exists(id)? {
             return Err(format_err!("A paste with this id already exists"));
@@ -120,6 +136,15 @@ impl Storage for SimpleStorage {
     fn set_name(&self, id: &str, name: &str) -> Result<()> {
         let name_key = String::from("name") + "." + id;
         self.db.insert(&name_key, name)?;
+        Ok(())
+    }
+
+    async fn update_size(&self, id: &str) -> Result<()> {
+        let paste_path = self.base_dir.join(id);
+        let meta = fs::metadata(&paste_path).await?;
+        let size = meta.len();
+        let size_key = String::from("size") + "." + id;
+        self.db.insert(&size_key, &size.to_be_bytes())?;
         Ok(())
     }
 

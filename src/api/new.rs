@@ -84,6 +84,14 @@ pub async fn post(
         }
     }
 
+    data.storage.inner.update_size(&id).await?;
+
+    // Check if it's an empty paste
+    if data.storage.inner.size(&id)? == 0 {
+        data.storage.inner.delete(&id).await?;
+        return Err(ApiError::BadRequest("Cannot create paste with no content.".to_string()));
+    }
+
     // Set expire time
     if let Some(t) = expire_time {
         data.storage.inner.set_expire_time(&id, &t)?;

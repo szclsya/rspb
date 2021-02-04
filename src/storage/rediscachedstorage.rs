@@ -118,6 +118,10 @@ impl Storage for RedisCachedStorage {
         self.backend.get_name(id)
     }
 
+    fn size(&self, id: &str) -> Result<u64> {
+        self.backend.size(id)
+    }
+
     async fn new(&self, id: &str, key: &str) -> Result<File> {
         self.backend.new(id, key).await
     }
@@ -128,6 +132,10 @@ impl Storage for RedisCachedStorage {
 
     fn set_name(&self, id: &str, name: &str) -> Result<()> {
         self.backend.set_name(id, name)
+    }
+
+    async fn update_size(&self, id: &str) -> Result<()> {
+        self.backend.update_size(id).await
     }
 
     async fn update(&self, id: &str) -> Result<File> {
