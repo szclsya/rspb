@@ -1,13 +1,11 @@
 use crate::skip_fail;
-use crate::storage::{Response, Storage};
+use crate::storage::{PasteMeta, Response, Storage};
 
 use anyhow::{format_err, Result};
 use async_std::path::{Path, PathBuf};
 use async_trait::async_trait;
 use chrono::prelude::*;
 use log::{debug, error};
-use serde::{Deserialize, Serialize};
-use std::convert::TryInto;
 use tokio::fs;
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
@@ -15,13 +13,6 @@ use tokio_util::codec::{BytesCodec, FramedRead};
 
 // In bytes
 const MAX_STREAM_FILE_SIZE: u64 = 5 * 1024 * 1024;
-
-#[derive(Serialize, Deserialize)]
-pub struct PasteMeta {
-    key: String, // Should be a uuid
-    create_time: DateTime<Utc>,
-    expire_time: Option<DateTime<Utc>>,
-}
 
 #[derive(Clone)]
 pub struct SimpleStorage {
@@ -45,24 +36,7 @@ impl SimpleStorage {
 #[async_trait]
 impl Storage for SimpleStorage {
     fn exists(&self, id: &str) -> Result<bool> {
-        let key_key = String::from("key") + "." + id;
-        Ok(self.db.contains_key(&key_key)?)
-    }
-
-    fn validate(&self, id: &str, key: &str) -> Result<bool> {
-        let key_key = String::from("key") + "." + id;
-        let local_key = self.db.get(&key_key)?;
-
-        if local_key == None {
-            return Err(format_err!("Paste does not exists"));
-        }
-
-        // Check delete key
-        if local_key.unwrap() == key {
-            Ok(true)
-        } else {
-            Ok(false)
-        }
+        Ok(self.db.contains_key(id)?)
     }
 
     async fn get(&self, id: &str) -> Result<Response> {
@@ -76,8 +50,7 @@ impl Storage for SimpleStorage {
         let mut file = File::open(&paste_path).await?;
 
         // Check file size
-        let meta = fs::metadata(&paste_path).await?;
-        if meta.len() < MAX_STREAM_FILE_SIZE {
+        if self.get_meta(id)?.size < MAX_STREAM_FILE_SIZE {
             let mut content: Vec<u8> = Vec::new();
             file.read_to_end(&mut content).await?;
 
@@ -88,27 +61,15 @@ impl Storage for SimpleStorage {
         }
     }
 
-    fn get_name(&self, id: &str) -> Result<Option<String>> {
-        let name_key = String::from("name") + "." + id;
-        match self.db.get(&name_key)? {
-            Some(v) => Ok(Some(String::from_utf8(v.to_vec())?)),
-            None => Ok(None),
-        }
-    }
+    fn get_meta(&self, id: &str) -> Result<PasteMeta> {
+        let meta: PasteMeta = match self.db.get(&id)? {
+            Some(bin) => bincode::deserialize(&bin)?,
+            None => {
+                return Err(format_err!("Paste not found".to_string()));
+            }
+        };
 
-    fn size(&self, id: &str) -> Result<u64> {
-        let size_key = String::from("size") + "." + id;
-        match self.db.get(&size_key)? {
-            Some(s) => {
-                let be_size_vec= s.to_vec();
-                let num = be_size_vec.try_into();
-                match num {
-                    Ok(num) => Ok(u64::from_be_bytes(num)),
-                    Err(_e) => Err(format_err!("Internal error".to_string())),
-                }
-            },
-            None => Err(format_err!("Paste not found".to_string())),
-        }
+        Ok(meta)
     }
 
     async fn new(&self, id: &str, key: &str) -> Result<File> {
@@ -121,30 +82,36 @@ impl Storage for SimpleStorage {
         let content_file = fs::File::create(&new_path).await?;
 
         // Add meta
-        let key_key = String::from("key") + "." + id;
-        self.db.insert(&key_key, key)?;
+        self.set_meta(
+            &id,
+            &PasteMeta {
+                create_time: Utc::now(),
+                expire_time: None,
+                atime: None,
+                name: None,
+                size: 0, // Set it to 0 for now
+                key: key.to_string(),
+            },
+        )?;
+
         Ok(content_file)
     }
 
-    fn set_expire_time(&self, id: &str, time: &DateTime<Utc>) -> Result<()> {
-        let expire_time_key = String::from("expire_time") + "." + id;
-        let time_string: String = time.to_rfc3339();
-        self.db.insert(&expire_time_key, time_string.as_str())?;
-        Ok(())
-    }
+    fn set_meta(&self, id: &str, meta: &PasteMeta) -> Result<()> {
+        let meta_bin = bincode::serialize(&meta)?;
+        self.db.insert(&id, meta_bin)?;
 
-    fn set_name(&self, id: &str, name: &str) -> Result<()> {
-        let name_key = String::from("name") + "." + id;
-        self.db.insert(&name_key, name)?;
         Ok(())
     }
 
     async fn update_size(&self, id: &str) -> Result<()> {
+        let mut meta = self.get_meta(id)?;
+
         let paste_path = self.base_dir.join(id);
-        let meta = fs::metadata(&paste_path).await?;
-        let size = meta.len();
-        let size_key = String::from("size") + "." + id;
-        self.db.insert(&size_key, &size.to_be_bytes())?;
+        let file_meta = fs::metadata(&paste_path).await?;
+
+        meta.size = file_meta.len();
+        self.set_meta(id, &meta)?;
         Ok(())
     }
 
@@ -165,10 +132,7 @@ impl Storage for SimpleStorage {
 
         // Actually delete them
         fs::remove_file(paste_path).await?;
-        let key_key = String::from("key") + "." + id;
-        let expire_time_key = String::from("expire_time") + "." + id;
-        self.db.remove(&key_key)?;
-        self.db.remove(&expire_time_key)?;
+        self.db.remove(&id)?;
 
         Ok(())
     }
@@ -178,26 +142,18 @@ impl Storage for SimpleStorage {
         let mut deleted = Vec::new();
 
         // Go though all expire times
-        for paste in self.db.scan_prefix("expire_time") {
-            let p = skip_fail!(paste);
-            let expire_time_str = skip_fail!(String::from_utf8(p.1.to_vec()));
-            let expire_time = skip_fail!(chrono::DateTime::parse_from_rfc3339(&expire_time_str));
-            if Utc::now() >= expire_time {
-                let mut id = skip_fail!(String::from_utf8(p.0.to_vec()));
-                id = id.trim_start_matches("expire_time.").to_string();
-                // Try to delete the paste file
-                let mut paste_path = PathBuf::from(&self.base_dir);
-                paste_path.push(&id);
-                skip_fail!(fs::remove_file(&paste_path).await);
-                // Now remove the database entries
-                let key_key = String::from("key") + "." + &id;
-                let expire_time_key = String::from("expire_time") + "." + &id;
-                skip_fail!(self.db.remove(&key_key));
-                skip_fail!(self.db.remove(&expire_time_key));
-                // Finally add to list
-                deleted.push(id);
+        for id_u8 in self.db.iter().keys() {
+            let id = skip_fail!(String::from_utf8(skip_fail!(id_u8).to_vec()));
+            let meta = skip_fail!(self.get_meta(&id));
+            if let Some(exp_time) = meta.expire_time {
+                if Utc::now() >= exp_time {
+                    // It's expired, delete it!
+                    skip_fail!(self.delete(&id).await);
+                    deleted.push(id);
+                }
             }
         }
+
         debug!("Finish deleting expired pastes.");
         Ok(deleted)
     }

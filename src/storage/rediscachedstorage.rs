@@ -1,13 +1,12 @@
 use crate::storage::simplestorage::SimpleStorage;
-use crate::storage::Response;
 /// This storage backend still utilizes filesystem, but attempts to speed things up by caching small pastes
 /// and their metadata into redis.
 use crate::storage::Storage;
+use crate::storage::{PasteMeta, Response};
 
 use anyhow::{format_err, Result};
 use async_std::path::Path;
 use async_trait::async_trait;
-use chrono::prelude::*;
 use log::{debug, info, warn};
 use redis::aio::MultiplexedConnection;
 use redis::AsyncCommands;
@@ -66,10 +65,6 @@ impl Storage for RedisCachedStorage {
         self.backend.exists(id)
     }
 
-    fn validate(&self, id: &str, key: &str) -> Result<bool> {
-        self.backend.validate(id, key)
-    }
-
     async fn get(&self, id: &str) -> Result<Response> {
         // First check if content is in redis
         let mut con = self.con.clone();
@@ -114,24 +109,16 @@ impl Storage for RedisCachedStorage {
         }
     }
 
-    fn get_name(&self, id: &str) -> Result<Option<String>> {
-        self.backend.get_name(id)
-    }
-
-    fn size(&self, id: &str) -> Result<u64> {
-        self.backend.size(id)
+    fn get_meta(&self, id: &str) -> Result<PasteMeta> {
+        self.backend.get_meta(id)
     }
 
     async fn new(&self, id: &str, key: &str) -> Result<File> {
         self.backend.new(id, key).await
     }
 
-    fn set_expire_time(&self, id: &str, time: &DateTime<Utc>) -> Result<()> {
-        self.backend.set_expire_time(id, time)
-    }
-
-    fn set_name(&self, id: &str, name: &str) -> Result<()> {
-        self.backend.set_name(id, name)
+    fn set_meta(&self, id: &str, meta: &PasteMeta) -> Result<()> {
+        self.backend.set_meta(id, meta)
     }
 
     async fn update_size(&self, id: &str) -> Result<()> {

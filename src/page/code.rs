@@ -49,14 +49,12 @@ pub async fn render(
         }
     };
 
-    let name = match data.storage.inner.get_name(&id) {
-        Ok(name) => {
-            match name {
-                Some(n) => n,
-                None => "untitled".to_string(),
-            }
+    let name = match data.storage.inner.get_meta(&id) {
+        Ok(meta) => match meta.name {
+            Some(n) => n,
+            None => "untitled".to_string(),
         },
-        Err(_e) => { return HttpResponse::InternalServerError().body("Internal Server Error") },
+        Err(_e) => return HttpResponse::InternalServerError().body("Internal Server Error"),
     };
 
     let ctx = CodeTemplate {

@@ -19,6 +19,10 @@ pub async fn put(
         message: String::new(),
         info: None,
     };
+    if !data.storage.inner.exists(&id)? {
+        return Err(ApiError::NotFound);
+    }
+    let mut meta = data.storage.inner.get_meta(&id)?;
 
     let headers = req.headers();
 
@@ -30,11 +34,7 @@ pub async fn put(
         }
     };
 
-    if !data.storage.inner.exists(&id)? {
-        return Err(ApiError::NotFound);
-    }
-
-    if !data.storage.inner.validate(&id, &key)? {
+    if !meta.validate(&key) {
         return Err(ApiError::BadRequest("Invalid key for paste.".to_string()));
     }
 
@@ -64,14 +64,16 @@ pub async fn put(
         let minutes = s.parse::<i64>()?;
         if minutes > 0 {
             let t = Utc::now() + Duration::minutes(minutes);
-            data.storage.inner.set_expire_time(&id, &t)?;
+            meta.expire_time = Some(t);
         }
     }
 
     // Update name
     if let Some(name) = req.headers().get("Name") {
-        data.storage.inner.set_name(&id, name.to_str()?)?;
+        meta.name = Some(name.to_str()?.to_string());
     }
+
+    data.storage.inner.set_meta(&id, &meta)?;
 
     // We have a success if we manage to get here
     response.success = true;

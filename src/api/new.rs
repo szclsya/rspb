@@ -7,21 +7,25 @@ use chrono::prelude::*;
 use chrono::Duration;
 use futures::{StreamExt, TryStreamExt};
 use log::{debug, info};
-use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use serde::Serialize;
 use tokio::io::AsyncWriteExt;
 
+const CHARSET: &[u8] = b"abcdefghijklmnopqrstuvwxyz123456";
 const ID_LEN: usize = 6;
 const KEY_LEN: usize = 10;
 
 fn gen_random_chars(len: usize) -> String {
     let mut rng = thread_rng();
-    std::iter::repeat(())
-        .map(|()| rng.sample(Alphanumeric))
-        .map(char::from)
-        .take(len)
-        .collect()
+
+    let res: String = (0..len)
+        .map(|_| {
+            let idx = rng.gen_range(0..CHARSET.len());
+            CHARSET[idx] as char
+        })
+        .collect();
+
+    res
 }
 
 #[derive(Serialize)]
@@ -84,22 +88,27 @@ pub async fn post(
         }
     }
 
+    // Update size && Check if it's an empty paste
     data.storage.inner.update_size(&id).await?;
-
-    // Check if it's an empty paste
-    if data.storage.inner.size(&id)? == 0 {
+    let mut meta = data.storage.inner.get_meta(&id)?;
+    if meta.size == 0 {
         data.storage.inner.delete(&id).await?;
-        return Err(ApiError::BadRequest("Cannot create paste with no content.".to_string()));
+        return Err(ApiError::BadRequest(
+            "Cannot create paste with no content.".to_string(),
+        ));
     }
 
     // Set expire time
     if let Some(t) = expire_time {
-        data.storage.inner.set_expire_time(&id, &t)?;
+        meta.expire_time = Some(t);
     }
 
     if let Some(name) = req.headers().get("Name") {
-        data.storage.inner.set_name(&id, name.to_str()?)?;
+        meta.name = Some(name.to_str()?.to_string());
     }
+
+    // Write back meta
+    data.storage.inner.set_meta(&id, &meta)?;
 
     let info = Info {
         id,

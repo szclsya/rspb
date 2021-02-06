@@ -19,7 +19,7 @@ pub async fn delete(
         return Err(ApiError::NotFound);
     }
 
-    if !data.storage.inner.validate(&id, &key)? {
+    if !data.storage.inner.get_meta(&id)?.validate(&key) {
         return Err(ApiError::Forbidden);
     }
 

@@ -6,6 +6,7 @@ use async_std::path::Path;
 use async_trait::async_trait;
 use chrono::prelude::*;
 use dyn_clone::DynClone;
+use serde::{Deserialize, Serialize};
 use tokio::fs::File;
 use tokio_util::codec::{BytesCodec, FramedRead};
 
@@ -14,19 +15,32 @@ pub enum Response {
     Stream(FramedRead<File, BytesCodec>),
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct PasteMeta {
+    create_time: DateTime<Utc>,
+    pub expire_time: Option<DateTime<Utc>>,
+    pub atime: Option<DateTime<Utc>>,
+    pub name: Option<String>,
+    pub size: u64,
+    key: String,
+}
+
+impl PasteMeta {
+    pub fn validate(&self, key: &str) -> bool {
+        key == self.key
+    }
+}
+
 #[async_trait]
 pub trait Storage: DynClone + Send {
     // Non-mutating methods
     fn exists(&self, id: &str) -> Result<bool>;
-    fn validate(&self, id: &str, key: &str) -> Result<bool>;
     async fn get(&self, id: &str) -> Result<Response>;
-    fn get_name(&self, id: &str) -> Result<Option<String>>;
-    fn size(&self, id: &str) -> Result<u64>;
+    fn get_meta(&self, id: &str) -> Result<PasteMeta>;
 
     // Mutating methods
     async fn new(&self, id: &str, key: &str) -> Result<File>;
-    fn set_expire_time(&self, id: &str, time: &DateTime<Utc>) -> Result<()>;
-    fn set_name(&self, id: &str, name: &str) -> Result<()>;
+    fn set_meta(&self, id: &str, meta: &PasteMeta) -> Result<()>;
     async fn update_size(&self, id: &str) -> Result<()>;
     async fn update(&self, id: &str) -> Result<File>;
     async fn delete(&self, id: &str) -> Result<()>;
