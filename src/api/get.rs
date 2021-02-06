@@ -26,15 +26,34 @@ pub async fn get(
     // Get paste content
     let content = data.storage.inner.get(&id).await;
     match content {
-        Ok(content) => match content {
-            Response::Content(vec) => {
-                return HttpResponse::Ok().body(vec);
+        Ok(content) => {
+            // Record atime
+            if let Ok(mut meta) = data.storage.inner.get_meta(&id) {
+                match meta.atime {
+                    Some(t) => {
+                        let now = chrono::Utc::now();
+                        if now - t > chrono::Duration::minutes(60) {
+                            meta.atime = Some(now);
+                            // It's fine if it fails
+                            let _ = data.storage.inner.set_meta(&id, &meta);
+                        }
+                    }
+                    None => {
+                        meta.atime = Some(chrono::Utc::now());
+                        let _ = data.storage.inner.set_meta(&id, &meta);
+                    }
+                }
             }
-            Response::Stream(stream) => {
-                let s = stream.map_ok(BytesMut::freeze);
-                return HttpResponse::Ok().streaming(s);
+            match content {
+                Response::Content(vec) => {
+                    return HttpResponse::Ok().body(vec);
+                }
+                Response::Stream(stream) => {
+                    let s = stream.map_ok(BytesMut::freeze);
+                    return HttpResponse::Ok().streaming(s);
+                }
             }
-        },
+        }
         Err(err) => {
             debug!("GET paste with id {} failed: {:?}", &info, err);
             return HttpResponse::NotFound().body("Error: Paste not found.");
