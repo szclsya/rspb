@@ -23,6 +23,15 @@ pub async fn delete(
         return Err(ApiError::Forbidden);
     }
 
+    delete_api(data, id, req).await
+}
+
+
+pub async fn delete_api(
+    data: web::Data<PasteState>,
+    id: web::Path<String>,
+    _req: HttpRequest,
+) -> Result<HttpResponse, ApiError> {
     data.storage.inner.delete(&id).await?;
 
     // Success!

@@ -5,10 +5,12 @@ pub mod misc;
 mod page;
 
 use actix_web::{guard, middleware, rt, web, App, HttpServer};
+use actix_web_httpauth::middleware::HttpAuthentication;
 use async_std::path::PathBuf;
 use clap::Arg;
 use log::warn;
 use serde::Deserialize;
+use std::collections::HashMap;
 use std::time::Duration;
 
 // Static files
@@ -19,6 +21,7 @@ struct Config {
     base_dir: String,
     redis_address: Option<String>,
     bind_address: String,
+    admins: HashMap<String, String>,
     site: SiteConfig,
 }
 
@@ -78,14 +81,28 @@ async fn main() -> std::io::Result<()> {
     let c2 = config.clone();
     HttpServer::new(move || {
         let generated = generate();
+        let auth = HttpAuthentication::basic(misc::auth::validator);
         App::new()
             .wrap(middleware::Logger::default())
+            .wrap(middleware::Compress::default())
             .data(PasteState {
                 storage: storage.clone(),
                 config: c2.clone(),
             })
             .service(
                 web::resource("/f").route(web::route().guard(guard::Get()).to(page::form::render)),
+            )
+            .service(
+                web::scope("/admin").wrap(auth)
+                    .service(
+                    web::resource("/stats")
+                            .route(web::route().guard(guard::Get()).to(api::admin::list::get)),
+                    )
+                    .service(
+                    web::resource("/{paste_id}")
+                            .route(web::route().guard(guard::Put()).to(api::admin::paste::put))
+                            .route(web::route().guard(guard::Delete()).to(api::admin::paste::delete))
+                    )
             )
             .service(
                 web::resource("/")

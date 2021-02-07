@@ -17,7 +17,7 @@ pub enum Response {
 
 #[derive(Serialize, Deserialize)]
 pub struct PasteMeta {
-    create_time: DateTime<Utc>,
+    pub create_time: DateTime<Utc>,
     pub expire_time: Option<DateTime<Utc>>,
     pub atime: Option<DateTime<Utc>>,
     pub name: Option<String>,
@@ -37,6 +37,7 @@ pub trait Storage: DynClone + Send {
     fn exists(&self, id: &str) -> Result<bool>;
     async fn get(&self, id: &str) -> Result<Response>;
     fn get_meta(&self, id: &str) -> Result<PasteMeta>;
+    fn get_all_meta(&self) -> Result<Vec<(String, PasteMeta)>>;
 
     // Mutating methods
     async fn new(&self, id: &str, key: &str) -> Result<File>;

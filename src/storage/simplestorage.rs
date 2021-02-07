@@ -72,6 +72,17 @@ impl Storage for SimpleStorage {
         Ok(meta)
     }
 
+    fn get_all_meta(&self) -> Result<Vec<(String, PasteMeta)>> {
+        let mut metas = Vec::new();
+        for id_u8 in self.db.iter().keys() {
+            let id = String::from_utf8(id_u8?.to_vec())?;
+            let meta = self.get_meta(&id)?;
+            metas.push((id, meta));
+        }
+
+        Ok(metas)
+    }
+
     async fn new(&self, id: &str, key: &str) -> Result<File> {
         if self.exists(id)? {
             return Err(format_err!("A paste with this id already exists"));

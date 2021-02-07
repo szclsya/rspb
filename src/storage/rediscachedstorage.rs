@@ -113,6 +113,10 @@ impl Storage for RedisCachedStorage {
         self.backend.get_meta(id)
     }
 
+    fn get_all_meta(&self) -> Result<Vec<(String, PasteMeta)>> {
+        self.backend.get_all_meta()
+    }
+
     async fn new(&self, id: &str, key: &str) -> Result<File> {
         self.backend.new(id, key).await
     }

@@ -1,3 +1,4 @@
+pub mod auth;
 use anyhow::{format_err, Result};
 use std::collections::HashMap;
 

@@ -11,6 +11,34 @@ use tokio::io::AsyncWriteExt;
 pub async fn put(
     data: web::Data<PasteState>,
     id: web::Path<String>,
+    payload: Multipart,
+    req: HttpRequest,
+) -> Result<HttpResponse, ApiError> {
+    let mut response: Response<()> = Response {
+        success: false,
+        message: String::new(),
+        info: None,
+    };
+
+    let key = match req.headers().get("Key") {
+        Some(k) => k.to_str().unwrap(),
+        None => {
+            response.message = "Please provide key.".to_string();
+            return Err(ApiError::BadRequest("Please provide key.".to_string()));
+        }
+    };
+
+    let meta = data.storage.inner.get_meta(&id)?;
+    if !meta.validate(&key) {
+        return Err(ApiError::BadRequest("Invalid key for paste.".to_string()));
+    }
+
+    modify(data, id, payload, req).await
+}
+
+pub async fn modify(
+    data: web::Data<PasteState>,
+    id: web::Path<String>,
     mut payload: Multipart,
     req: HttpRequest,
 ) -> Result<HttpResponse, ApiError> {
@@ -25,19 +53,6 @@ pub async fn put(
     let mut meta = data.storage.inner.get_meta(&id)?;
 
     let headers = req.headers();
-
-    let key = match req.headers().get("Key") {
-        Some(k) => k.to_str().unwrap(),
-        None => {
-            response.message = "Please provide key.".to_string();
-            return Err(ApiError::BadRequest("Please provide key.".to_string()));
-        }
-    };
-
-    if !meta.validate(&key) {
-        return Err(ApiError::BadRequest("Invalid key for paste.".to_string()));
-    }
-
     if let Some(arg) = headers.get("Update-Content") {
         if arg == "y" {
             // iterate over multipart stream
