@@ -343,10 +343,18 @@ body {
 }
 
 main {
+  position: relative;
   max-width: 51rem;
   padding: 0 0.5em;
   margin: 0.5em auto;
   margin-bottom: 2em;
+}
+
+footer {
+  position: absolute;
+  bottom: -3em;
+  font-size: 0.95em;
+  color: #979593;
 }
 
 h2 {

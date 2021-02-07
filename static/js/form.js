@@ -66,7 +66,6 @@ function expire_paste_in_storage() {
       return true;
     }
     let expire_time = new Date(paste.expire_time);
-    console.log(expire_time);
     if (expire_time.getTime() > Date.now()) {
       return true;
     } else {
@@ -115,15 +114,17 @@ function show_pastes_from_storage(e) {
 
 function fill_id_and_key(e, id, key) {
   e.querySelector('.id').value = id;
-  e.querySelector('.key').value = key;
+  if (e.querySelector('.key') != undefined) {
+    e.querySelector('.key').value = key;
+  }
 }
 
 function update_paste_list() {
   show_pastes_from_storage(document.getElementById('modify'));
+  show_pastes_from_storage(document.getElementById('view'));
   show_pastes_from_storage(document.getElementById('delete'));
 }
 
-// Create paste by text
 function create() {
   // UI Elements
   const create = document.getElementById('create');
@@ -190,6 +191,19 @@ function create() {
     });
 }
 
+function view() {
+  const view = document.getElementById('view');
+  const id = view.querySelector('.id').value;
+  const ext = view.querySelector('.file-ext').value;
+
+  let url = ("/" + id);
+  if (ext.length > 0) {
+    url += "/" + ext;
+  }
+  console.log(url);
+  window.open(url);
+
+}
 function modify() {
   // Essential info
   const modify = document.getElementById('modify');
