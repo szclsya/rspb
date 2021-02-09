@@ -27,30 +27,43 @@ pub async fn get(
     let content = data.storage.inner.get(&id).await;
     match content {
         Ok(content) => {
+            let mut meta = match data.storage.inner.get_meta(&id) {
+                Ok(m) => m,
+                Err(_e) => { return HttpResponse::InternalServerError().body("Internal Server Error"); }
+            };
+
+            // Get size
+            let size = meta.size;
+            let name = meta.name.clone().unwrap_or("".to_string());
             // Record atime
-            if let Ok(mut meta) = data.storage.inner.get_meta(&id) {
-                match meta.atime {
-                    Some(t) => {
-                        let now = chrono::Utc::now();
-                        if now - t > chrono::Duration::minutes(60) {
-                            meta.atime = Some(now);
-                            // It's fine if it fails
-                            let _ = data.storage.inner.set_meta(&id, &meta);
-                        }
-                    }
-                    None => {
-                        meta.atime = Some(chrono::Utc::now());
+            match meta.atime {
+                Some(t) => {
+                    let now = chrono::Utc::now();
+                    if now - t > chrono::Duration::minutes(60) {
+                        meta.atime = Some(now);
+                        // It's fine if it fails
                         let _ = data.storage.inner.set_meta(&id, &meta);
                     }
                 }
+                None => {
+                    meta.atime = Some(chrono::Utc::now());
+                    let _ = data.storage.inner.set_meta(&id, &meta);
+                }
             }
+
             match content {
                 Response::Content(vec) => {
-                    return HttpResponse::Ok().body(vec);
+                    return HttpResponse::Ok()
+                        .header("Content-Length", size)
+                        .header("Name", name)
+                        .body(vec);
                 }
                 Response::Stream(stream) => {
                     let s = stream.map_ok(BytesMut::freeze);
-                    return HttpResponse::Ok().streaming(s);
+                    return HttpResponse::Ok()
+                        .header("Content-Length", size)
+                        .header("Name", name)
+                        .streaming(s);
                 }
             }
         }
