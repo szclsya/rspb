@@ -26,7 +26,6 @@ pub async fn delete(
     delete_api(data, id, req).await
 }
 
-
 pub async fn delete_api(
     data: web::Data<PasteState>,
     id: web::Path<String>,

@@ -29,7 +29,9 @@ pub async fn get(
         Ok(content) => {
             let mut meta = match data.storage.inner.get_meta(&id) {
                 Ok(m) => m,
-                Err(_e) => { return HttpResponse::InternalServerError().body("Internal Server Error"); }
+                Err(_e) => {
+                    return HttpResponse::InternalServerError().body("Internal Server Error");
+                }
             };
 
             // Get size

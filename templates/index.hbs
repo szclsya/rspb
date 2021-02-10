@@ -45,7 +45,7 @@
       <h2>More examples with cURL</h2>
       <h3>Create paste with expire time</h3>
       <div class="code-block">
-        <pre>curl -F "c=@code.rs" -H "Expire-After: 60" "{{ url }}"</pre>
+        <pre>curl -F "c=@code.rs" -F "expire-after=60" "{{ url }}"</pre>
       </div>
       <p>
         In minutes.
@@ -53,13 +53,13 @@
 
       <h3>Update paste</h3>
        <div class="code-block">
-         <pre>curl -i -X PUT "{{ url }}/$PASTE_ID" -H "Key: $PASTE_KEY" -H "Update-Content: y" -F "c=@new_code.rs"</pre>
+         <pre>curl -i -X PUT "{{ url }}/$PASTE_ID" -H "Key: $PASTE_KEY" -F "c=@new_code.rs"</pre>
       </div>
       <p> This operation will replace the original content of the paste.</p>
 
       <h3>Renew paste</h3>
       <div class="code-block">
-        <pre>curl -i -X PUT "{{ url }}/$PASTE_ID" -H "Key: $PASTE_KEY" -H "Expire-Time: 60"</pre>
+        <pre>curl -i -X PUT "{{ url }}/$PASTE_ID" -H "Key: $PASTE_KEY" -F "expire-time=60"</pre>
       </div>
       <p>This would re-set expire time of the paste to the given minutes from now.</p>
 

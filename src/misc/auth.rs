@@ -18,7 +18,7 @@ pub async fn validator(
         .config
         .admins;
     let password_hash = match credentials.password() {
-        Some(p) => format!("{:x}", Blake2b::digest(p.as_bytes())).to_string(),
+        Some(p) => format!("{:x}", Blake2b::digest(p.as_bytes())),
         None => {
             return Err(AuthenticationError::from(Config::default()).into());
         }

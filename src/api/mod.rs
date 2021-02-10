@@ -4,9 +4,10 @@ pub mod get;
 pub mod modify;
 pub mod new;
 
+use log::error;
 use actix_web::{error::ResponseError, http::header::ToStrError, http::StatusCode, HttpResponse};
 use serde::Serialize;
-use std::num::ParseIntError;
+use std::{ num::ParseIntError, string::FromUtf8Error };
 
 #[derive(Serialize)]
 pub struct Response<I> {
@@ -37,9 +38,8 @@ impl std::fmt::Display for ApiError {
 
 impl From<anyhow::Error> for ApiError {
     fn from(err: anyhow::Error) -> Self {
-        match err {
-            _ => ApiError::Unknown("Internal Server Error".to_string()),
-        }
+        error!("Error when processing API call: {}", err.to_string());
+        ApiError::Unknown("Internal Server Error".to_string())
     }
 }
 
@@ -52,6 +52,12 @@ impl From<ParseIntError> for ApiError {
 impl From<ToStrError> for ApiError {
     fn from(_err: ToStrError) -> Self {
         ApiError::BadRequest("Bad Header".to_string())
+    }
+}
+
+impl From<FromUtf8Error> for ApiError {
+    fn from(_err: FromUtf8Error) -> Self {
+        ApiError::BadRequest("Bad UTF-8 in form.".to_string())
     }
 }
 
@@ -74,4 +80,33 @@ impl ResponseError for ApiError {
         };
         HttpResponse::build(status_code).json(error_response)
     }
+}
+
+use actix_multipart::Field;
+use tokio::io::AsyncWriteExt;
+use std::marker::Unpin;
+use futures::StreamExt;
+async fn read_field<T>(field: &mut Field, mut to: T) -> Result<(), ApiError>
+where
+    T: AsyncWriteExt + Unpin,
+{
+    let mut size = 0;
+    while let Some(chunk) = field.next().await {
+        let data = chunk.unwrap();
+        size += data.len();
+        match to.write_all(&data).await {
+            Ok(_res) => continue,
+            Err(_err) => {
+                return Err(ApiError::Unknown(
+                    "Connection error: upload interrupted.".to_string(),
+                ));
+            }
+        };
+    }
+
+    // Don't allow empty field
+    if size == 0 {
+        return Err(ApiError::BadRequest("Bad form: Empty field".to_string()));
+    }
+    Ok(())
 }

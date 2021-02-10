@@ -1,15 +1,15 @@
-use crate::api::{ApiError, Response};
+use crate::api::{ApiError, Response, read_field};
 use crate::PasteState;
 
+use anyhow::Result;
 use actix_multipart::Multipart;
 use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::prelude::*;
 use chrono::Duration;
-use futures::{StreamExt, TryStreamExt};
+use futures::TryStreamExt;
 use log::{debug, info};
 use rand::{thread_rng, Rng};
 use serde::Serialize;
-use tokio::io::AsyncWriteExt;
 
 const CHARSET: &[u8] = b"abcdefghijklmnopqrstuvwxyz123456";
 const ID_LEN: usize = 6;
@@ -38,21 +38,8 @@ struct Info {
 pub async fn post(
     data: web::Data<PasteState>,
     mut payload: Multipart,
-    req: HttpRequest,
+    _req: HttpRequest,
 ) -> Result<HttpResponse, ApiError> {
-    // Parse expire time
-    let expire_time = match req.headers().get("Expire-After") {
-        Some(t) => {
-            let minutes = t.to_str()?.to_string().parse::<i64>()?;
-            if minutes > 0 {
-                Some(Utc::now() + Duration::minutes(minutes))
-            } else {
-                None
-            }
-        }
-        None => None,
-    };
-
     // Get unused key
     let mut id = gen_random_chars(ID_LEN);
     while data.storage.inner.exists(&id)? {
@@ -60,31 +47,46 @@ pub async fn post(
     }
     let key = gen_random_chars(KEY_LEN);
 
-    let mut res: Response<Info> = Response {
-        success: false,
-        message: String::new(),
-        info: None,
-    };
 
-    info!("NEW paste {:?} expire at {:?}.", id, expire_time);
+    // Set up empty values to be filled in (potentially)
+    let mut name: Option<String> = None;
+    let mut expire_time: Option<DateTime<Utc>> = None;
 
     // iterate over multipart stream
     let mut file = data.storage.inner.new(&id, &key).await?;
     while let Ok(Some(mut field)) = payload.try_next().await {
-        debug!(
-            "Processing field with disposition {:?}",
-            field.content_disposition()
-        );
-        while let Some(chunk) = field.next().await {
-            let data = chunk.unwrap();
-            match file.write_all(&data).await {
-                Ok(_res) => continue,
-                Err(_err) => {
-                    return Err(ApiError::Unknown(
-                        "Connection error: upload interrupted.".to_string(),
-                    ));
+        let disposition = match field.content_disposition() {
+            Some(d) => d,
+            None => {
+                data.storage.inner.delete(&id).await?;
+                return Err(ApiError::BadRequest("Bad form: No disposition.".to_string()));
+            }
+        };
+        match disposition.get_name() {
+            Some("content") | Some("c") => {
+                read_field(&mut field, &mut file).await?;
+            },
+            Some("name") => {
+                let mut buf: Vec<u8> = Vec::new();
+                read_field(&mut field, &mut buf).await?;
+                name = Some(String::from_utf8(buf)?);
+            },
+            Some("expire_after") => {
+                let mut buf: Vec<u8> = Vec::new();
+                read_field(&mut field, &mut buf).await?;
+                let m = String::from_utf8(buf)?;
+                let minutes = m.parse::<i64>()?;
+                if minutes > 0 {
+                    expire_time = Some(Utc::now() + Duration::minutes(minutes));
+                } else {
+                    data.storage.inner.delete(&id).await?;
+                    return Err(ApiError::BadRequest("Bad expire time.".to_string()));
                 }
-            };
+            },
+            _ => {
+                data.storage.inner.delete(&id).await?;
+                return Err(ApiError::BadRequest("Bad form".to_string()));
+            },
         }
     }
 
@@ -103,20 +105,25 @@ pub async fn post(
         meta.expire_time = Some(t);
     }
 
-    if let Some(name) = req.headers().get("Name") {
-        meta.name = Some(name.to_str()?.to_string());
+    // Set name
+    if name.is_some() && name.as_ref().unwrap().len() < 8000 {
+        meta.name = name;
     }
 
     // Write back meta
     data.storage.inner.set_meta(&id, &meta)?;
 
-    let info = Info {
-        id,
-        key,
-        expire_time,
+    // Success!
+    info!("NEW paste {:?} expire at {:?}.", id, expire_time);
+    let res: Response<Info> = Response {
+        success: true,
+        message: String::new(),
+        info: Some(Info {
+            id,
+            key,
+            expire_time,
+        }),
     };
 
-    res.success = true;
-    res.info = Some(info);
     Ok(HttpResponse::Ok().json(&res))
 }

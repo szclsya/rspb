@@ -39,9 +39,10 @@ POST /
 
 Use ~form-data/multipart~ to upload the content.
 
-Headers:
-+ *Name* Optional, specify the name of the paste.
-+ *Expire-After* Optional, used to set time (in minutes) of expire (from the time of creation).
+Form fields:
++ *content* or *c* Necessary, the content.
++ *name* Optional, specify the name of the paste.
++ *expire-after* Optional, used to set time (in minutes) of expire (from the time of creation).
 
 **** Response
 A typical success request would look like this:
@@ -66,10 +67,11 @@ Use ~form-data/multipart~ to upload the content to replace the current one.
 
 Headers:
 + *Key* Necessary. The key you obtain from creating the paste. All operations will require a valid key.
-+ *Name* Optional. Modify the name of the paste.
-+ *Update-Content* Optional. Set to =y= if you want to use ~multipart~ to upload your new data.
-  - If not set, the upload would be ignored.
-+ *Expire-Time* Optional. Set it if you want to renew the paste to be expired after given time from now.
+
+Form fields:
++ *content* or *c* Optional. The content you wish to replace with.
++ *name* Optional. Modify the name of the paste.
++ *expire-after* Optional. Set it if you want to renew the paste to be expired after given time from now.
   - Follows the same time format as in create paste headers.
 
 **** Response

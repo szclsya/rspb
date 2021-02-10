@@ -93,16 +93,21 @@ async fn main() -> std::io::Result<()> {
                 web::resource("/f").route(web::route().guard(guard::Get()).to(page::form::render)),
             )
             .service(
-                web::scope("/admin").wrap(auth)
+                web::scope("/admin")
+                    .wrap(auth)
                     .service(
-                    web::resource("/stats")
+                        web::resource("/list")
                             .route(web::route().guard(guard::Get()).to(api::admin::list::get)),
                     )
                     .service(
-                    web::resource("/{paste_id}")
+                        web::resource("/{paste_id}")
                             .route(web::route().guard(guard::Put()).to(api::admin::paste::put))
-                            .route(web::route().guard(guard::Delete()).to(api::admin::paste::delete))
-                    )
+                            .route(
+                                web::route()
+                                    .guard(guard::Delete())
+                                    .to(api::admin::paste::delete),
+                            ),
+                    ),
             )
             .service(
                 web::resource("/")

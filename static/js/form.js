@@ -142,7 +142,7 @@ function create() {
   // Initate form data
   const formData = new FormData();
   if (file_selector.files.length > 0) {
-    formData.append('c', file_selector.files[0]);
+    formData.append('content', file_selector.files[0]);
   } else {
     if (val.length == 0) {
       create_status.classList = fail_card_class;
@@ -153,17 +153,15 @@ function create() {
     formData.append('c', val);
   }
 
-  let h = new Headers();
   if (exp_time.length != 0) {
-    h.append("Expire-After", exp_time * exp_time_unit);
+    formData.append('expire_after', exp_time * exp_time_unit);
   }
 
   if (name.length != 0) {
-    h.append("Name", name);
+    formData.append('name', name);
   }
 
-  const req = new Request('/',
-                          {mode: 'cors', method: 'POST', headers: h, body: formData});
+  const req = new Request('/', {mode: 'cors', method: 'POST', body: formData});
   
   fetch(req)
     .then(res => res.json())
@@ -173,7 +171,7 @@ function create() {
         let t = null;
         if (res.info.expire_time != null) {
           t = new Date(res.info.expire_time);
-          result_msg += `Expire at ${t.toLocaleString()}.`;
+          result_msg += `Paste will expire at ${t.toLocaleString()}.`;
         }
         update_card(create_status, success_card_class, "Success", result_msg);
         add_paste_to_storage({
@@ -202,8 +200,8 @@ function view() {
   }
   console.log(url);
   window.open(url);
-
 }
+
 function modify() {
   // Essential info
   const modify = document.getElementById('modify');
@@ -219,28 +217,25 @@ function modify() {
   const files = modify.querySelector('.paste-from-file').files;
   const formData = new FormData();
   if (files.length > 0) {
-    formData.append('c', files[0]);
-    h.append('Update-Content', 'y');
+    formData.append('content', files[0]);
   } else if (content.length > 0) {
-    formData.append('c', content);
-    h.append('Update-Content', 'y');
+    formData.append('content', content);
   }
 
   // Update name
   const name = modify.querySelector('.name').value;
   if (name.length > 0) {
-    h.append("Name", name);
+    formData.appen('name', name);
   }
 
   // Update expire time
   const exp_time = modify.querySelector('.expire-in').value;
   const exp_time_unit = modify.querySelector('.expire-time-unit').value;
   if (exp_time.length != 0) {
-    h.append("Expire-After", exp_time * exp_time_unit);
+    formData.append('expire_after', exp_time * exp_time_unit);
   }
 
-  const req = new Request('/' + id,
-                          {mode: 'cors', method: 'PUT', headers: h, body: formData});
+  const req = new Request('/' + id, {mode: 'cors', method: 'PUT', headers: h, body: formData});
 
   // LINK START!
   update_card(card, working_card_class, "Working", "Hang tight...");

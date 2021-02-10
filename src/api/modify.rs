@@ -1,12 +1,11 @@
-use crate::api::{ApiError, Response};
+use crate::api::{ApiError, Response, read_field};
 use crate::PasteState;
 
 use actix_multipart::Multipart;
 use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::prelude::*;
 use chrono::Duration;
-use futures::{StreamExt, TryStreamExt};
-use tokio::io::AsyncWriteExt;
+use futures::TryStreamExt;
 
 pub async fn put(
     data: web::Data<PasteState>,
@@ -40,7 +39,7 @@ pub async fn modify(
     data: web::Data<PasteState>,
     id: web::Path<String>,
     mut payload: Multipart,
-    req: HttpRequest,
+    _req: HttpRequest,
 ) -> Result<HttpResponse, ApiError> {
     let mut response: Response<()> = Response {
         success: false,
@@ -52,42 +51,44 @@ pub async fn modify(
     }
     let mut meta = data.storage.inner.get_meta(&id)?;
 
-    let headers = req.headers();
-    if let Some(arg) = headers.get("Update-Content") {
-        if arg == "y" {
-            // iterate over multipart stream
-            let mut file = data.storage.inner.update(&id).await?;
-            while let Ok(Some(mut field)) = payload.try_next().await {
-                while let Some(chunk) = field.next().await {
-                    let data = chunk.unwrap();
-                    match file.write_all(&data).await {
-                        Ok(_res) => continue,
-                        Err(_err) => {
-                            return Err(ApiError::Unknown(
-                                "Connection error: upload interrupted.".to_string(),
-                            ));
-                        }
-                    };
-                }
+    // Read multipart form
+    while let Ok(Some(mut field)) = payload.try_next().await {
+        let disposition = match field.content_disposition() {
+            Some(d) => d,
+            None => {
+                data.storage.inner.delete(&id).await?;
+                return Err(ApiError::BadRequest("Bad form: No disposition.".to_string()));
             }
+        };
+        match disposition.get_name() {
+            Some("content") | Some("c") => {
+                let mut file = data.storage.inner.update(&id).await?;
+                read_field(&mut field, &mut file).await?;
+            },
+            Some("name") => {
+                let mut buf: Vec<u8> = Vec::new();
+                read_field(&mut field, &mut buf).await?;
+                meta.name = Some(String::from_utf8(buf)?);
+            },
+            Some("expire_after") => {
+                let mut buf: Vec<u8> = Vec::new();
+                read_field(&mut field, &mut buf).await?;
+                let m = String::from_utf8(buf)?;
+                let minutes = m.parse::<i64>()?;
+                if minutes > 0 {
+                    meta.expire_time = Some(Utc::now() + Duration::minutes(minutes));
+                } else {
+                    data.storage.inner.delete(&id).await?;
+                    return Err(ApiError::BadRequest("Bad expire time.".to_string()));
+                }
+            },
+            _ => {
+                data.storage.inner.delete(&id).await?;
+                return Err(ApiError::BadRequest("Bad form".to_string()));
+            },
         }
     }
-
-    // Parse expire time
-    if let Some(t) = req.headers().get("Expire-After") {
-        let s = t.to_str()?.to_string();
-        let minutes = s.parse::<i64>()?;
-        if minutes > 0 {
-            let t = Utc::now() + Duration::minutes(minutes);
-            meta.expire_time = Some(t);
-        }
-    }
-
-    // Update name
-    if let Some(name) = req.headers().get("Name") {
-        meta.name = Some(name.to_str()?.to_string());
-    }
-
+    // Write back meta
     data.storage.inner.set_meta(&id, &meta)?;
 
     // We have a success if we manage to get here

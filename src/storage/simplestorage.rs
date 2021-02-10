@@ -160,8 +160,14 @@ impl Storage for SimpleStorage {
                 if Utc::now() >= exp_time {
                     // It's expired, delete it!
                     skip_fail!(self.delete(&id).await);
-                    deleted.push(id);
+                    deleted.push(id.clone());
                 }
+            }
+            // Delete empty paste
+            if meta.size == 0 {
+                // Delete empty paste
+                skip_fail!(self.delete(&id).await);
+                deleted.push(id);
             }
         }
 
