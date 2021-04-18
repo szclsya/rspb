@@ -11,12 +11,12 @@ build = "build.rs"
 async-std = "1"
 futures = "0.3"
 actix = "0.10"
-actix-web = "3"
+actix-web = { version = "3", features = ["rustls"] }
 actix-multipart = "0.3"
 actix-web-static-files = "3.0"
 actix-web-httpauth = "0.5"
 # Intentionally downgrade tokio* to make bytes compatible with actix
-tokio = { version = "0.2", features = ["full"] }
+tokio = { version = "0.2", features = ["fs"] }
 tokio-util = { version = "0.3", features = ["codec"] }
 yarte = "0.14"
 redis = { version = "0.19", features = ["async-std-comp", "connection-manager"] }
