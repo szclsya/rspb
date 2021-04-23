@@ -80,9 +80,15 @@
    fetch(audioReq)
      .then(response => response.blob())
      .then(function(blob) {
+       let mimetype = "audio/{{ extension }}";
        let objectURL = URL.createObjectURL(blob);
        // Load the music!
-       audio.src = objectURL;
+       // Use source to make Safari happy
+       var sourceElement = document.createElement('source')
+       sourceElement.src = objectURL;
+       sourceElement.type = mimetype;
+       audio.appendChild(sourceElement);
+       audio.load();
 
        // Fill the meta!
        let jsmediatags = window.jsmediatags;
