@@ -118,7 +118,12 @@ async fn main() -> std::io::Result<()> {
                 web::resource("/{paste_id}")
                     .route(web::route().guard(guard::Delete()).to(api::delete::delete))
                     .route(web::route().guard(guard::Get()).to(api::get::get))
+                    .route(web::route().guard(guard::Head()).to(api::get::head))
                     .route(web::route().guard(guard::Put()).to(api::modify::put)),
+            )
+            .service(
+                web::resource("/{paste_id}/audio")
+                    .route(web::route().guard(guard::Get()).to(page::audio::render)),
             )
             .service(
                 web::resource("/{paste_id}/{lang}")

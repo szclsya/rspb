@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title }}</title>
+    <link rel="stylesheet"
+          href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.5.0/build/styles/tomorrow-night.min.css">
+    <link rel="stylesheet" href="/static/css/rspbw.css">
+  </head>
+  <body>
+    <main>
+      <div id="title-bar">
+        <h1>{{ title }}</h1>
+        <h2>{{ slogan }}</h2>
+      </div>
+
+      <p>Filename: {{ filename }}</p>
+      <noscript>This page requires JavaScript.</noscript>
+
+      <!-- Audio playback -->
+      <p id="loading-msg">Loading audio, this may take a while...</p>
+
+      <div id="audio-info" style="min-height: 3em; display: none">
+        <img id="cover-art" style="max-height: 65vh; max-width: 95vw">
+        <div class="info">
+          <div id="first-row">
+            <span id="title"></span>
+            <span class="separator">•</span>
+            <span id="artist"></span>
+          </div>
+          <div id="second-row">
+            <span id="album"></span>
+          </div>
+        </div>
+        <audio id="audio" controls src="/{{ id }}.{{ extension }}" style="margin: 1em 0; width: 100%">
+          Your browser does not support the
+          <code>audio</code> element.
+        </audio>
+      </div>
+
+  </body>
+
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/jsmediatags@3.8.1/dist/jsmediatags.min.js"></script>
+  <script>
+   let show = function(tag) {
+     let loading = document.getElementById("loading-msg");
+     let info = document.getElementById("audio-info");
+     let cover = document.getElementById("cover-art");
+     let title = document.getElementById("title");
+     let artist = document.getElementById("artist");
+     let album = document.getElementById("album");
+
+     // Fill in the stuff
+     // Cover art
+     if (tag.tags.picture) {
+       let picture = tag.tags.picture; // create reference to track art
+       let base64String = "";
+       for (let i = 0; i < picture.data.length; i++) {
+         base64String += String.fromCharCode(picture.data[i]);
+       }
+       let imageUri = "data:" + picture.format + ";base64," + window.btoa(base64String);
+       cover.src = imageUri;
+     }
+     // title
+     title.innerHTML = tag.tags.title;
+     // artist
+     artist.innerHTML = tag.tags.artist;
+     // album
+     album.innerHTML = tag.tags.album;
+
+     // Show the info
+     info.style = "";
+   }
+
+   let audio = document.getElementById("audio");
+   // Load audio into blob, to avoid double download
+   let audioReq = new Request("/{{ id }}.{{ extension }}");
+   fetch(audioReq)
+     .then(response => response.blob())
+     .then(function(blob) {
+       let objectURL = URL.createObjectURL(blob);
+       // Load the music!
+       audio.src = objectURL;
+
+       // Fill the meta!
+       let jsmediatags = window.jsmediatags;
+       let loading = document.getElementById("loading-msg");
+       jsmediatags.read(blob, {
+         onSuccess: function(tag) {
+           show(tag);
+           loading.style= "display: none";
+         },
+         onError: function(error) {
+           loading.innerHTML = "No audio metadata found in this paste.";
+         }
+       });
+     })
+   
+  </script>
+</html>

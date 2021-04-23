@@ -67,6 +67,6 @@ pub async fn render(
 
     let html = ctx.call().unwrap();
     HttpResponse::Ok()
-        .content_type("application/json")
+        .content_type("text/html")
         .body(html)
 }

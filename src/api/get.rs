@@ -8,6 +8,48 @@ use regex::Regex;
 use actix_web::web::BytesMut;
 use futures::TryStreamExt;
 
+pub async fn head(
+    data: web::Data<PasteState>,
+    info: web::Path<String>,
+    req: HttpRequest,
+) -> impl Responder {
+    // Make sure this is a valid paste id
+    let id_uri_re = Regex::new(r"^/[a-zA-Z0-9]{6}(\.|\?|$)").unwrap();
+    if !id_uri_re.is_match(req.uri().path()) {
+        return HttpResponse::NotFound().body("404 Not Found");
+    }
+
+    let mut id = info.clone();
+    id.truncate(6); // Only use first 6 elements
+    debug!("GET paste with id {}.", &id);
+
+    // Check if exists
+    match data.storage.inner.exists(&id) {
+        Ok(true) => {
+            let meta = match data.storage.inner.get_meta(&id) {
+                Ok(m) => m,
+                Err(_e) => {
+                    return HttpResponse::InternalServerError().body("Internal Server Error");
+                }
+            };
+
+            let size = meta.size;
+            let name = meta.name.clone().unwrap_or("".to_string());
+            return HttpResponse::Ok()
+                .header("Content-Length", size)
+                .header("Content-Disposition", format!("inline; filename=\"{}\"", &name))
+                .header("Name", name)
+                .body("");
+        }
+        Ok(false) => {
+            return HttpResponse::NotFound().body("Error: Paste not found.");
+        }
+        Err(_) => {
+            return HttpResponse::InternalServerError().body("Internal Server Error");
+        }
+    }
+}
+
 pub async fn get(
     data: web::Data<PasteState>,
     info: web::Path<String>,
@@ -57,7 +99,8 @@ pub async fn get(
                 Response::Content(vec) => {
                     return HttpResponse::Ok()
                         .header("Content-Length", size)
-                        .header("Content-Disposition", format!("inline; filename={}", &name))
+                        .header("Content-Disposition", format!("inline; filename=\"{}\"", &name))
+                        .header("Cache-Control", "max-age=600")
                         .header("Name", name)
                         .body(vec);
                 }
@@ -66,6 +109,7 @@ pub async fn get(
                     return HttpResponse::Ok()
                         .header("Content-Length", size)
                         .header("Content-Disposition", format!("inline; filename=\"{}\"", &name))
+                        .header("Cache-Control", "max-age=600")
                         .header("Name", name)
                         .streaming(s);
                 }
