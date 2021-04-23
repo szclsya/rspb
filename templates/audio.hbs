@@ -34,12 +34,12 @@
             <span id="album"></span>
           </div>
         </div>
-        <audio id="audio" controls src="/{{ id }}.{{ extension }}" style="margin: 1em 0; width: 100%">
-          Your browser does not support the
-          <code>audio</code> element.
-        </audio>
       </div>
 
+      <audio id="audio" controls style="margin: 1em 0; width: 100%; display: none">
+        Your browser does not support the
+        <code>audio</code> element.
+      </audio>
   </body>
 
   <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/jsmediatags@3.8.1/dist/jsmediatags.min.js"></script>
@@ -91,9 +91,11 @@
          onSuccess: function(tag) {
            show(tag);
            loading.style= "display: none";
+           audio.style.display = "initial";
          },
          onError: function(error) {
            loading.innerHTML = "No audio metadata found in this paste.";
+           audio.style.display = "initial";
          }
        });
      })
