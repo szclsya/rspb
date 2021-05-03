@@ -1,4 +1,4 @@
-use crate::api::{ApiError, Response, read_field};
+use crate::api::{read_field, ApiError, Response};
 use crate::PasteState;
 
 use actix_multipart::Multipart;
@@ -57,19 +57,21 @@ pub async fn modify(
             Some(d) => d,
             None => {
                 data.storage.inner.delete(&id).await?;
-                return Err(ApiError::BadRequest("Bad form: No disposition.".to_string()));
+                return Err(ApiError::BadRequest(
+                    "Bad form: No disposition.".to_string(),
+                ));
             }
         };
         match disposition.get_name() {
             Some("content") | Some("c") => {
                 let mut file = data.storage.inner.update(&id).await?;
                 read_field(&mut field, &mut file).await?;
-            },
+            }
             Some("name") => {
                 let mut buf: Vec<u8> = Vec::new();
                 read_field(&mut field, &mut buf).await?;
                 meta.name = Some(String::from_utf8(buf)?);
-            },
+            }
             Some("expire_after") => {
                 let mut buf: Vec<u8> = Vec::new();
                 read_field(&mut field, &mut buf).await?;
@@ -81,11 +83,11 @@ pub async fn modify(
                     data.storage.inner.delete(&id).await?;
                     return Err(ApiError::BadRequest("Bad expire time.".to_string()));
                 }
-            },
+            }
             _ => {
                 data.storage.inner.delete(&id).await?;
                 return Err(ApiError::BadRequest("Bad form".to_string()));
-            },
+            }
         }
     }
     // Write back meta

@@ -1,9 +1,9 @@
-use crate::api::{ApiError, Response, read_field};
+use crate::api::{read_field, ApiError, Response};
 use crate::PasteState;
 
-use anyhow::Result;
 use actix_multipart::Multipart;
 use actix_web::{web, HttpRequest, HttpResponse};
+use anyhow::Result;
 use chrono::prelude::*;
 use chrono::Duration;
 use futures::TryStreamExt;
@@ -47,7 +47,6 @@ pub async fn post(
     }
     let key = gen_random_chars(KEY_LEN);
 
-
     // Set up empty values to be filled in (potentially)
     let mut name: Option<String> = None;
     let mut expire_time: Option<DateTime<Utc>> = None;
@@ -59,18 +58,20 @@ pub async fn post(
             Some(d) => d,
             None => {
                 data.storage.inner.delete(&id).await?;
-                return Err(ApiError::BadRequest("Bad form: No disposition.".to_string()));
+                return Err(ApiError::BadRequest(
+                    "Bad form: No disposition.".to_string(),
+                ));
             }
         };
         match disposition.get_name() {
             Some("content") | Some("c") => {
                 read_field(&mut field, &mut file).await?;
-            },
+            }
             Some("name") => {
                 let mut buf: Vec<u8> = Vec::new();
                 read_field(&mut field, &mut buf).await?;
                 name = Some(String::from_utf8(buf)?);
-            },
+            }
             Some("expire_after") => {
                 let mut buf: Vec<u8> = Vec::new();
                 read_field(&mut field, &mut buf).await?;
@@ -82,11 +83,11 @@ pub async fn post(
                     data.storage.inner.delete(&id).await?;
                     return Err(ApiError::BadRequest("Bad expire time.".to_string()));
                 }
-            },
+            }
             _ => {
                 data.storage.inner.delete(&id).await?;
                 return Err(ApiError::BadRequest("Bad form".to_string()));
-            },
+            }
         }
     }
 

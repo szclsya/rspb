@@ -18,7 +18,5 @@ pub async fn render(data: web::Data<PasteState>) -> impl Responder {
 
     let content = ctx.call().unwrap();
 
-    HttpResponse::Ok()
-        .content_type("text/html")
-        .body(content)
+    HttpResponse::Ok().content_type("text/html").body(content)
 }

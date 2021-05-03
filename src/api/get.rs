@@ -37,7 +37,10 @@ pub async fn head(
             let name = meta.name.clone().unwrap_or("".to_string());
             return HttpResponse::Ok()
                 .header("Content-Length", size)
-                .header("Content-Disposition", format!("inline; filename=\"{}\"", &name))
+                .header(
+                    "Content-Disposition",
+                    format!("inline; filename=\"{}\"", &name),
+                )
                 .header("Name", name)
                 .body("");
         }
@@ -99,7 +102,10 @@ pub async fn get(
                 Response::Content(vec) => {
                     return HttpResponse::Ok()
                         .header("Content-Length", size)
-                        .header("Content-Disposition", format!("inline; filename=\"{}\"", &name))
+                        .header(
+                            "Content-Disposition",
+                            format!("inline; filename=\"{}\"", &name),
+                        )
                         .header("Cache-Control", "max-age=600")
                         .header("Name", name)
                         .body(vec);
@@ -108,7 +114,10 @@ pub async fn get(
                     let s = stream.map_ok(BytesMut::freeze);
                     return HttpResponse::Ok()
                         .header("Content-Length", size)
-                        .header("Content-Disposition", format!("inline; filename=\"{}\"", &name))
+                        .header(
+                            "Content-Disposition",
+                            format!("inline; filename=\"{}\"", &name),
+                        )
                         .header("Cache-Control", "max-age=600")
                         .header("Name", name)
                         .streaming(s);

@@ -4,10 +4,10 @@ pub mod get;
 pub mod modify;
 pub mod new;
 
-use log::error;
 use actix_web::{error::ResponseError, http::header::ToStrError, http::StatusCode, HttpResponse};
+use log::error;
 use serde::Serialize;
-use std::{ num::ParseIntError, string::FromUtf8Error };
+use std::{num::ParseIntError, string::FromUtf8Error};
 
 #[derive(Serialize)]
 pub struct Response<I> {
@@ -83,9 +83,9 @@ impl ResponseError for ApiError {
 }
 
 use actix_multipart::Field;
-use tokio::io::AsyncWriteExt;
-use std::marker::Unpin;
 use futures::StreamExt;
+use std::marker::Unpin;
+use tokio::io::AsyncWriteExt;
 async fn read_field<T>(field: &mut Field, mut to: T) -> Result<(), ApiError>
 where
     T: AsyncWriteExt + Unpin,

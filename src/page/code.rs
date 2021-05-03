@@ -66,7 +66,5 @@ pub async fn render(
     };
 
     let html = ctx.call().unwrap();
-    HttpResponse::Ok()
-        .content_type("text/html")
-        .body(html)
+    HttpResponse::Ok().content_type("text/html").body(html)
 }

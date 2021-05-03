@@ -12,7 +12,7 @@ struct AudioTemplate {
     slogan: String,
     id: String,
     filename: String,
-    extension: String
+    extension: String,
 }
 
 pub async fn render(
@@ -48,7 +48,7 @@ pub async fn render(
     let sections = name.split('.').collect::<Vec<&str>>();
     let extension = match sections.len() {
         0 => "mp3".to_string(), // Try the most universal file
-        _ => sections[sections.len()-1].to_string(),
+        _ => sections[sections.len() - 1].to_string(),
     };
 
     let ctx = AudioTemplate {
@@ -60,7 +60,5 @@ pub async fn render(
     };
 
     let html = ctx.call().unwrap();
-    HttpResponse::Ok()
-        .content_type("text/html")
-        .body(html)
+    HttpResponse::Ok().content_type("text/html").body(html)
 }
