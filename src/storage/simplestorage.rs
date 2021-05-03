@@ -6,6 +6,7 @@ use async_std::path::{Path, PathBuf};
 use async_trait::async_trait;
 use chrono::prelude::*;
 use log::{debug, error};
+use std::collections::HashMap;
 use tokio::fs;
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
@@ -13,6 +14,7 @@ use tokio_util::codec::{BytesCodec, FramedRead};
 
 // In bytes
 const MAX_STREAM_FILE_SIZE: u64 = 5 * 1024 * 1024;
+const MAX_SIZE: u64 = 10 * 1024 * 1024;
 
 #[derive(Clone)]
 pub struct SimpleStorage {
@@ -148,10 +150,13 @@ impl Storage for SimpleStorage {
         Ok(())
     }
 
-    async fn cleanup(&self) -> Result<Vec<String>> {
+    async fn cleanup(&self, max_size: Option<u64>) -> Result<Vec<String>> {
         debug!("Begin deleting expired pastes...");
         let mut deleted = Vec::new();
 
+        // Calculate delete coefficient
+        let mut total_size = 0;
+        let mut delete_coefficient: HashMap<String, u64> = HashMap::new();
         // Go though all expire times
         for id_u8 in self.db.iter().keys() {
             let id = skip_fail!(String::from_utf8(skip_fail!(id_u8).to_vec()));
@@ -162,16 +167,42 @@ impl Storage for SimpleStorage {
                     skip_fail!(self.delete(&id).await);
                     deleted.push(id.clone());
                 }
-            }
-            // Delete empty paste
-            if meta.size == 0 {
+            } else if meta.size == 0 {
                 // Delete empty paste
                 skip_fail!(self.delete(&id).await);
-                deleted.push(id);
+                deleted.push(id.clone());
+            } else if max_size.is_some() {
+                // Calculate total size
+                total_size += meta.size;
+                // Calculate delete coefficient
+                delete_coefficient.insert(
+                    id,
+                    calculate_delete_coefficient(
+                        meta.size,
+                        (Utc::now() - meta.create_time).num_seconds() as u64,
+                    ),
+                );
             }
         }
 
+        // delete largest until within constraints
+        if let Some(max_size) = max_size {
+            while total_size > max_size {
+                // Find the current largest coefficient
+                let (id, _) = delete_coefficient.iter().max_by_key(|entry| entry.1).unwrap();
+                debug!("Deleting {} due to size constraint.", &id);
+                skip_fail!(self.delete(&id).await);
+            }
+        }
         debug!("Finish deleting expired pastes.");
         Ok(deleted)
+    }
+}
+
+fn calculate_delete_coefficient(size: u64, oldness: u64) -> u64 {
+    if size > MAX_SIZE {
+        oldness * (size - MAX_SIZE)
+    } else {
+        oldness
     }
 }

@@ -141,8 +141,8 @@ impl Storage for RedisCachedStorage {
         Ok(())
     }
 
-    async fn cleanup(&self) -> Result<Vec<String>> {
-        let deleted = self.backend.cleanup().await?;
+    async fn cleanup(&self, max_size: Option<u64>) -> Result<Vec<String>> {
+        let deleted = self.backend.cleanup(max_size).await?;
 
         // Delete paste in Redis
         for id in &deleted {

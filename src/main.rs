@@ -23,6 +23,7 @@ struct Config {
     bind_address: String,
     admins: HashMap<String, String>,
     site: SiteConfig,
+    max_size: Option<u64>,
 }
 
 #[derive(Deserialize, Clone)]
@@ -67,12 +68,23 @@ async fn main() -> std::io::Result<()> {
 
     // Periodically check paste expire
     let s1 = storage.clone();
+    let max_size = config.max_size.map(|size| size*1024*1024);
     rt::spawn(async move {
+        let mut counter = 0;
         loop {
             rt::time::delay_for(Duration::from_secs(60)).await;
-            match s1.inner.cleanup().await {
-                Ok(_ok) => (),
-                Err(err) => warn!("{}", &err.to_string()),
+            if counter > 60 {
+                match s1.inner.cleanup(max_size).await {
+                    Ok(_ok) => (),
+                    Err(err) => warn!("{}", &err.to_string()),
+                }
+                counter = 0;
+            } else {
+                match s1.inner.cleanup(None).await {
+                    Ok(_ok) => (),
+                    Err(err) => warn!("{}", &err.to_string()),
+                }
+                counter += 1;
             }
         }
     });

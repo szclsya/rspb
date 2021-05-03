@@ -45,7 +45,7 @@ pub trait Storage: DynClone + Send {
     async fn update_size(&self, id: &str) -> Result<()>;
     async fn update(&self, id: &str) -> Result<File>;
     async fn delete(&self, id: &str) -> Result<()>;
-    async fn cleanup(&self) -> Result<Vec<String>>; // Delete expired pastes
+    async fn cleanup(&self, max_size: Option<u64>) -> Result<Vec<String>>; // Delete expired pastes
 }
 
 pub struct StorageBox {
